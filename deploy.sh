@@ -12,18 +12,30 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
+# Verificar qual comando docker compose usar
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
+    echo "❌ Docker Compose não encontrado!"
+    exit 1
+fi
+
+echo "📦 Usando: $DOCKER_COMPOSE"
+
 # Parar containers existentes
 echo "🛑 Parando containers existentes..."
-docker-compose down
+$DOCKER_COMPOSE down
 
 # Rebuild e start
 echo "🔨 Construindo e iniciando containers..."
-docker-compose up --build -d
+$DOCKER_COMPOSE up --build -d
 
 # Verificar status
 echo "✅ Verificando status dos containers..."
-docker-compose ps
+$DOCKER_COMPOSE ps
 
 echo "🎉 Deploy concluído!"
 echo "📱 Aplicação disponível em: http://shapeme.pro"
-echo "🔍 API Health Check: http://shapeme.pro/health"
+echo "�� API Health Check: http://shapeme.pro/health"
