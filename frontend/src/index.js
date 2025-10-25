@@ -2,13 +2,16 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './i18n';
+
+// Components
 import Layout from './components/common/Layout';
+
+// Pages
 import Home from './pages/Home';
 import Recipes from './pages/Recipes';
 import Categories from './pages/Categories';
-import Admin from './pages/Admin';
 
-// CSS Global básico
+// CSS Global
 const globalStyles = `
   * {
     margin: 0;
@@ -35,6 +38,10 @@ const globalStyles = `
     font-family: inherit;
   }
 
+  input, textarea, select {
+    font-family: inherit;
+  }
+
   /* Scrollbar personalizada */
   ::-webkit-scrollbar {
     width: 8px;
@@ -52,6 +59,14 @@ const globalStyles = `
   ::-webkit-scrollbar-thumb:hover {
     background: #236B47;
   }
+
+  /* Responsividade */
+  @media (max-width: 768px) {
+    .nav-menu {
+      flex-direction: column;
+      gap: 1rem;
+    }
+  }
 `;
 
 // Adicionar estilos globais
@@ -67,7 +82,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/recipes" element={<Recipes />} />
           <Route path="/categories" element={<Categories />} />
-          <Route path="/admin" element={<Admin />} />
+          
           {/* Rota 404 */}
           <Route path="*" element={
             <div style={{

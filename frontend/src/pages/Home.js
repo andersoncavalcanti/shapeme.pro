@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 
 const Home = () => {
   const { t } = useTranslation();
-  const { user, isAuthenticated } = useAuth();
   const [apiStatus, setApiStatus] = useState('checking');
   const [stats, setStats] = useState({
     categories: 0,
@@ -131,23 +129,23 @@ const Home = () => {
 
   const getStartedActions = [
     {
-      title: '🏷️ Criar Categorias',
-      description: 'Comece criando categorias para organizar suas receitas',
+      title: '🏷️ Ver Categorias',
+      description: 'Visualize e gerencie as categorias de receitas',
       action: () => window.location.href = '/categories',
       color: '#1976d2',
       available: true
     },
     {
-      title: '📝 Cadastrar Receitas',
-      description: 'Adicione suas receitas saudáveis ao sistema',
-      action: () => window.location.href = isAuthenticated ? '/create-recipe' : '/login',
+      title: '🍽️ Ver Receitas',
+      description: 'Visualize todas as receitas cadastradas no sistema',
+      action: () => window.location.href = '/recipes',
       color: '#2E8B57',
       available: true
     },
     {
-      title: '🍽️ Ver Receitas',
-      description: 'Visualize todas as receitas cadastradas',
-      action: () => window.location.href = '/recipes',
+      title: '📚 Documentação API',
+      description: 'Acesse a documentação completa da API',
+      action: () => window.open('http://shapeme.pro/docs', '_blank'),
       color: '#f57c00',
       available: true
     }
@@ -171,47 +169,40 @@ const Home = () => {
         <h1 style={titleStyle}>🍃 ShapeMe</h1>
         <p style={subtitleStyle}>Sistema de Cadastro de Receitas Saudáveis</p>
         
-        {isAuthenticated ? (
-          <div>
-            <p style={{ marginBottom: '2rem', fontSize: '1.1rem' }}>
-              Bem-vindo, <strong>{user?.name}</strong>! 👋
-            </p>
-            <a
-              href="/create-recipe"
-              style={buttonStyle}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#236B47';
-                e.target.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#2E8B57';
-                e.target.style.transform = 'translateY(0)';
-              }}
-            >
-              ➕ Criar Nova Receita
-            </a>
-          </div>
-        ) : (
-          <div>
-            <p style={{ marginBottom: '2rem', fontSize: '1.1rem' }}>
-              Faça login para começar a cadastrar suas receitas!
-            </p>
-            <a
-              href="/login"
-              style={buttonStyle}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#236B47';
-                e.target.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#2E8B57';
-                e.target.style.transform = 'translateY(0)';
-              }}
-            >
-              🔑 Fazer Login
-            </a>
-          </div>
-        )}
+        <div style={{ marginTop: '2rem' }}>
+          <a
+            href="/recipes"
+            style={buttonStyle}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#236B47';
+              e.target.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#2E8B57';
+              e.target.style.transform = 'translateY(0)';
+            }}
+          >
+            🍽️ Ver Receitas
+          </a>
+          <a
+            href="/categories"
+            style={{
+              ...buttonStyle,
+              backgroundColor: '#1976d2',
+              marginLeft: '1rem'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#1565c0';
+              e.target.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#1976d2';
+              e.target.style.transform = 'translateY(0)';
+            }}
+          >
+            🏷️ Ver Categorias
+          </a>
+        </div>
       </div>
 
       {/* Status da API */}
@@ -249,10 +240,10 @@ const Home = () => {
             </div>
             <div style={statCardStyle}>
               <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f57c00' }}>
-                {stats.categories > 0 && stats.recipes > 0 ? '✅' : '📝'}
+                {stats.categories > 0 || stats.recipes > 0 ? '✅' : '🆕'}
               </div>
               <div>
-                {stats.categories > 0 && stats.recipes > 0 ? 'Sistema Ativo' : 'Pronto para Usar'}
+                {stats.categories > 0 || stats.recipes > 0 ? 'Sistema Ativo' : 'Sistema Limpo'}
               </div>
             </div>
           </div>
@@ -267,7 +258,7 @@ const Home = () => {
           color: '#2E8B57',
           fontSize: '2rem'
         }}>
-          🚀 Como Começar
+          🚀 Funcionalidades
         </h2>
         
         <div style={actionsGridStyle}>
@@ -318,44 +309,47 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Instruções */}
-      {stats.categories === 0 && stats.recipes === 0 && (
-        <div style={{
-          backgroundColor: '#fff3cd',
-          border: '1px solid #ffeaa7',
-          borderRadius: '8px',
-          padding: '2rem',
-          textAlign: 'center',
-          marginTop: '2rem'
-        }}>
-          <h3 style={{ color: '#856404', marginBottom: '1rem' }}>
-            💡 Primeiro Uso
-          </h3>
-          <p style={{ color: '#856404', marginBottom: '1rem' }}>
-            Seu sistema está vazio! Comece criando algumas categorias e depois adicione suas receitas.
-          </p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a
-              href="/categories"
-              style={{
-                ...buttonStyle,
-                backgroundColor: '#1976d2'
-              }}
-            >
-              1️⃣ Criar Categorias
-            </a>
-            <a
-              href={isAuthenticated ? "/create-recipe" : "/login"}
-              style={{
-                ...buttonStyle,
-                backgroundColor: '#2E8B57'
-              }}
-            >
-              2️⃣ Adicionar Receitas
-            </a>
-          </div>
+      {/* Instruções para API */}
+      <div style={{
+        backgroundColor: '#e8f5e8',
+        border: '1px solid #2E8B57',
+        borderRadius: '8px',
+        padding: '2rem',
+        textAlign: 'center',
+        marginTop: '2rem'
+      }}>
+        <h3 style={{ color: '#2E8B57', marginBottom: '1rem' }}>
+          🔧 Para Desenvolvedores
+        </h3>
+        <p style={{ color: '#2E8B57', marginBottom: '1rem' }}>
+          Use a API REST para integrar com outros sistemas ou criar suas próprias interfaces.
+        </p>
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <a
+            href="http://shapeme.pro/docs"
+            
+            rel="noopener noreferrer"
+            style={{
+              ...buttonStyle,
+              backgroundColor: '#f57c00'
+            }}
+          >
+            📚 Documentação API
+          </a>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText('http://shapeme.pro/api/');
+              alert('URL da API copiada!');
+            }}
+            style={{
+              ...buttonStyle,
+              backgroundColor: '#6c757d'
+            }}
+          >
+            📋 Copiar URL da API
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };
