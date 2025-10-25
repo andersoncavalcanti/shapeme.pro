@@ -1,22 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './i18n';
 import App from './App';
-
-// Components
-import Layout from './components/common/Layout';
-
-// Pages
-import Home from './pages/Home';
-import Recipes from './pages/Recipes';
-import Categories from './pages/Categories';
-import Admin from './pages/Admin';
-import Login from './pages/Login';
-
-// Auth
-import { AuthProvider } from './context/AuthContext';
-import ProtectedRoute from './components/common/ProtectedRoute';
 
 // CSS Global
 const globalStyles = `
@@ -81,45 +66,7 @@ const styleSheet = document.createElement("style");
 styleSheet.innerText = globalStyles;
 document.head.appendChild(styleSheet);
 
-function AppWrapper() {
-  return (
-    <App />
-  );
-}
-            <div style={{
-              textAlign: 'center', 
-              padding: '4rem',
-              maxWidth: '600px',
-              margin: '0 auto'
-            }}>
-              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🤔</div>
-              <h2 style={{ color: '#2E8B57', marginBottom: '1rem' }}>
-                Página não encontrada
-              </h2>
-              <p style={{ color: '#666', marginBottom: '2rem' }}>
-                A página que você está procurando não existe.
-              </p>
-              <a 
-                href="/" 
-                style={{
-                  backgroundColor: '#2E8B57',
-                  color: 'white',
-                  padding: '1rem 2rem',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  display: 'inline-block',
-                  transition: 'background-color 0.3s'
-                }}
-              >
-                🏠 Voltar ao Início
-              </a>
-            </div>
-          } />
-        </Routes>
-      </Layout>
-    </Router>
-  );
-}
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
