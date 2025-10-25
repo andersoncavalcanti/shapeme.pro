@@ -5,6 +5,7 @@ from ..database import get_db
 from ..schemas.user import UserCreate, UserResponse, UserBase
 from ..models import User
 from ..security import get_password_hash
+from ..auth_deps import get_current_user
 from ..services.user_service import get_user_by_email, create_user as create_user_service
 
 router = APIRouter(
@@ -29,3 +30,4 @@ async def create_admin_user(user: UserCreate, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
+
