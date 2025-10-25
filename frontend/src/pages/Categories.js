@@ -16,20 +16,15 @@ const Categories = () => {
     try {
       setLoading(true);
       setError(null);
+      
       const response = await apiService.getCategories();
-      setCategories(response.data.categories || []);
+      console.log('Categories response:', response);
+      
+      setCategories(response.categories || []);
+      
     } catch (error) {
       console.error('Error loading categories:', error);
-      setError('Erro ao carregar categorias');
-      // Fallback com categorias mockadas
-      setCategories([
-        { id: 1, name_pt: 'Saladas', name_en: 'Salads', name_es: 'Ensaladas' },
-        { id: 2, name_pt: 'Smoothies', name_en: 'Smoothies', name_es: 'Batidos' },
-        { id: 3, name_pt: 'Pratos Principais', name_en: 'Main Dishes', name_es: 'Platos Principales' },
-        { id: 4, name_pt: 'Sobremesas Saudáveis', name_en: 'Healthy Desserts', name_es: 'Postres Saludables' },
-        { id: 5, name_pt: 'Lanches', name_en: 'Snacks', name_es: 'Aperitivos' },
-        { id: 6, name_pt: 'Bebidas', name_en: 'Drinks', name_es: 'Bebidas' }
-      ]);
+      setError('Erro ao carregar categorias. Verifique se a API está funcionando.');
     } finally {
       setLoading(false);
     }
@@ -37,29 +32,19 @@ const Categories = () => {
 
   const getCategoryName = (category) => {
     const lang = i18n.language;
-    return category[`name_${lang}`] || category.name_pt;
+    return category[`name_${lang}`] || category.name_pt || category.name || 'Categoria';
   };
 
-  const getCategoryIcon = (categoryName) => {
-    const icons = {
-      'Saladas': '🥗',
-      'Salads': '🥗',
-      'Ensaladas': '🥗',
-      'Smoothies': '🥤',
-      'Batidos': '🥤',
-      'Pratos Principais': '🍽️',
-      'Main Dishes': '🍽️',
-      'Platos Principales': '🍽️',
-      'Sobremesas Saudáveis': '🍓',
-      'Healthy Desserts': '🍓',
-      'Postres Saludables': '🍓',
-      'Lanches': '🥪',
-      'Snacks': '🥪',
-      'Aperitivos': '🥪',
-      'Bebidas': '🧃',
-      'Drinks': '🧃'
-    };
-    return icons[categoryName] || '🍽️';
+  const handleDeleteCategory = async (categoryId) => {
+    if (!window.confirm('Tem certeza que deseja deletar esta categoria?')) return;
+    
+    try {
+      await apiService.deleteCategory(categoryId);
+      await loadCategories();
+      alert('✅ Categoria deletada com sucesso!');
+    } catch (error) {
+      alert(`❌ Erro ao deletar: ${error.message}`);
+    }
   };
 
   const containerStyle = {
@@ -79,39 +64,61 @@ const Categories = () => {
     marginBottom: '1rem',
   };
 
+  const buttonStyle = {
+    backgroundColor: '#2E8B57',
+    color: 'white',
+    border: 'none',
+    padding: '0.75rem 1.5rem',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    fontWeight: 'bold',
+    textDecoration: 'none',
+    display: 'inline-block',
+    margin: '0.5rem',
+  };
+
   const gridStyle = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
     gap: '2rem',
   };
 
   const cardStyle = {
     backgroundColor: 'white',
-    borderRadius: '16px',
+    borderRadius: '12px',
     padding: '2rem',
-    textAlign: 'center',
     boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-    transition: 'all 0.3s ease',
-    cursor: 'pointer',
-    border: '2px solid transparent',
+    transition: 'transform 0.3s, box-shadow 0.3s',
+    textAlign: 'center',
   };
 
-  const iconStyle = {
-    fontSize: '4rem',
-    marginBottom: '1rem',
-    display: 'block',
-  };
-
-  const categoryNameStyle = {
-    fontSize: '1.3rem',
+  const cardTitleStyle = {
+    fontSize: '1.5rem',
     fontWeight: 'bold',
     color: '#2E8B57',
-    marginBottom: '0.5rem',
+    marginBottom: '1rem',
   };
 
-  const recipeCountStyle = {
-    color: '#666',
+  const languageListStyle = {
+    marginBottom: '1.5rem',
+    lineHeight: '1.8',
+  };
+
+  const deleteButtonStyle = {
+    backgroundColor: '#dc3545',
+    color: 'white',
+    border: 'none',
+    padding: '0.5rem 1rem',
+    borderRadius: '4px',
+    cursor: 'pointer',
     fontSize: '0.9rem',
+    marginTop: '1rem',
+  };
+
+  const actionsStyle = {
+    textAlign: 'center',
+    marginBottom: '3rem',
   };
 
   if (loading) {
@@ -119,7 +126,25 @@ const Categories = () => {
       <div style={containerStyle}>
         <div style={{ textAlign: 'center', padding: '4rem' }}>
           <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
-          <h2>{t('status.loading')}</h2>
+          <h2>Carregando categorias...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={containerStyle}>
+        <div style={{ textAlign: 'center', padding: '4rem' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>❌</div>
+          <h2 style={{ color: '#dc3545', marginBottom: '1rem' }}>Erro ao carregar</h2>
+          <p style={{ color: '#666', marginBottom: '2rem' }}>{error}</p>
+          <button
+            onClick={loadCategories}
+            style={buttonStyle}
+          >
+            🔄 Tentar Novamente
+          </button>
         </div>
       </div>
     );
@@ -130,101 +155,130 @@ const Categories = () => {
       <div style={headerStyle}>
         <h1 style={titleStyle}>🏷️ {t('nav.categories')}</h1>
         <p style={{ fontSize: '1.1rem', color: '#666' }}>
-          Explore receitas por categoria
+          {categories.length} categorias cadastradas
         </p>
-        {error && (
-          <div style={{ 
-            backgroundColor: '#fff3cd', 
-            color: '#856404', 
-            padding: '0.75rem', 
-            borderRadius: '8px',
-            marginTop: '1rem',
-            border: '1px solid #ffeaa7'
-          }}>
-            ⚠️ Usando dados de exemplo (API indisponível)
-          </div>
-        )}
       </div>
 
-      <div style={gridStyle}>
-        {categories.map((category, index) => {
-          const colors = [
-            { bg: '#e8f5e8', border: '#2E8B57', hover: '#d4f4d4' },
-            { bg: '#e3f2fd', border: '#1976d2', hover: '#d1e7fd' },
-            { bg: '#fff3e0', border: '#f57c00', hover: '#ffe0b2' },
-            { bg: '#fce4ec', border: '#e91e63', hover: '#f8bbd9' },
-            { bg: '#f3e5f5', border: '#9c27b0', hover: '#e1bee7' },
-            { bg: '#e0f2f1', border: '#00796b', hover: '#b2dfdb' }
-          ];
-          const colorScheme = colors[index % colors.length];
+      <div style={actionsStyle}>
+        <button
+          onClick={loadCategories}
+          style={buttonStyle}
+        >
+          🔄 Atualizar Lista
+        </button>
+        <a
+          href="/admin"
+          style={buttonStyle}
+        >
+          ➕ Cadastrar Nova Categoria
+        </a>
+      </div>
 
-          return (
-            <div
-              key={category.id}
-              style={{
-                ...cardStyle,
-                backgroundColor: colorScheme.bg,
-                borderColor: colorScheme.border,
-              }}
+      {categories.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '4rem' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📂</div>
+          <h3>Nenhuma categoria encontrada</h3>
+          <p style={{ color: '#666', marginBottom: '2rem' }}>
+            Ainda não há categorias cadastradas no sistema.
+          </p>
+          <a 
+            href="/admin"
+            style={buttonStyle}
+          >
+            ➕ Cadastrar Primeira Categoria
+          </a>
+        </div>
+      ) : (
+        <div style={gridStyle}>
+          {categories.map(category => (
+            <div 
+              key={category.id} 
+              style={cardStyle}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.15)';
-                e.currentTarget.style.backgroundColor = colorScheme.hover;
-                e.currentTarget.style.borderColor = colorScheme.border;
+                e.currentTarget.style.transform = 'translateY(-5px)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-                e.currentTarget.style.backgroundColor = colorScheme.bg;
-                e.currentTarget.style.borderColor = 'transparent';
-              }}
-              onClick={() => {
-                // Futuramente, navegar para receitas da categoria
-                console.log(`Clicked category: ${getCategoryName(category)}`);
               }}
             >
-              <span style={iconStyle}>
-                {getCategoryIcon(getCategoryName(category))}
-              </span>
-              <h3 style={categoryNameStyle}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏷️</div>
+              
+              <h3 style={cardTitleStyle}>
                 {getCategoryName(category)}
               </h3>
-              <p style={recipeCountStyle}>
-                {Math.floor(Math.random() * 15) + 3} receitas
-              </p>
-            </div>
-          );
-        })}
-      </div>
+              
+              <div style={languageListStyle}>
+                <div><strong>🇧🇷 Português:</strong> {category.name_pt}</div>
+                <div><strong>🇺🇸 English:</strong> {category.name_en}</div>
+                <div><strong>🇪🇸 Español:</strong> {category.name_es}</div>
+              </div>
 
-      {/* Botão para adicionar categoria (admin) */}
-      <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-        <button
-          style={{
-            backgroundColor: '#2E8B57',
-            color: 'white',
-            border: 'none',
-            padding: '1rem 2rem',
-            borderRadius: '50px',
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            boxShadow: '0 4px 15px rgba(46, 139, 87, 0.3)',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#236B47';
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = '0 6px 20px rgba(46, 139, 87, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = '#2E8B57';
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 4px 15px rgba(46, 139, 87, 0.3)';
-          }}
-        >
-          ➕ Adicionar Nova Categoria
-        </button>
+              <div style={{ 
+                fontSize: '0.9rem', 
+                color: '#666',
+                marginBottom: '1rem',
+                padding: '0.5rem',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '4px'
+              }}>
+                <div><strong>ID:</strong> {category.id}</div>
+                {category.created_at && (
+                  <div><strong>Criado em:</strong> {new Date(category.created_at).toLocaleDateString('pt-BR')}</div>
+                )}
+              </div>
+
+              <button
+                onClick={() => handleDeleteCategory(category.id)}
+                style={deleteButtonStyle}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#c82333';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#dc3545';
+                }}
+              >
+                🗑️ Deletar Categoria
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Informações adicionais */}
+      <div style={{
+        backgroundColor: '#e8f5e8',
+        border: '1px solid #2E8B57',
+        borderRadius: '8px',
+        padding: '2rem',
+        textAlign: 'center',
+        marginTop: '3rem'
+      }}>
+        <h3 style={{ color: '#2E8B57', marginBottom: '1rem' }}>
+          💡 Sobre as Categorias
+        </h3>
+        <p style={{ color: '#2E8B57', marginBottom: '1rem' }}>
+          As categorias ajudam a organizar suas receitas. Cada categoria tem nomes em três idiomas 
+          para suporte multilíngue completo.
+        </p>
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <a
+            href="/admin"
+            style={buttonStyle}
+          >
+            ⚙️ Ir para Admin
+          </a>
+          <a
+            href="/recipes"
+            style={{
+              ...buttonStyle,
+              backgroundColor: '#1976d2'
+            }}
+          >
+            🍽️ Ver Receitas
+          </a>
+        </div>
       </div>
     </div>
   );

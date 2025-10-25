@@ -9,90 +9,95 @@ const Recipes = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadData();
   }, []);
 
+  useEffect(() => {
+    // Recarregar receitas quando filtros mudarem
+    if (!loading) {
+      loadRecipes();
+    }
+  }, [searchTerm, selectedCategory]);
+
   const loadData = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // Carregar categorias
-      const categoriesResponse = await apiService.getCategories();
-      setCategories(categoriesResponse.data.categories || []);
+      // Carregar categorias e receitas em paralelo
+      const [categoriesResponse, recipesResponse] = await Promise.all([
+        apiService.getCategories(),
+        apiService.getRecipes()
+      ]);
       
-      // Por enquanto, vamos simular algumas receitas
-      const mockRecipes = [
-        {
-          id: 1,
-          title_pt: 'Salada de Quinoa',
-          title_en: 'Quinoa Salad',
-          title_es: 'Ensalada de Quinoa',
-          description_pt: 'Uma salada nutritiva e saborosa com quinoa, vegetais frescos e molho especial.',
-          description_en: 'A nutritious and tasty salad with quinoa, fresh vegetables and special dressing.',
-          description_es: 'Una ensalada nutritiva y sabrosa con quinoa, vegetales frescos y aderezo especial.',
-          image_url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400',
-          difficulty: 2,
-          prep_time_minutes: 20,
-          category_id: 1
-        },
-        {
-          id: 2,
-          title_pt: 'Smoothie Verde',
-          title_en: 'Green Smoothie',
-          title_es: 'Batido Verde',
-          description_pt: 'Smoothie refrescante com espinafre, banana, maçã e água de coco.',
-          description_en: 'Refreshing smoothie with spinach, banana, apple and coconut water.',
-          description_es: 'Batido refrescante con espinacas, plátano, manzana y agua de coco.',
-          image_url: 'https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=400',
-          difficulty: 1,
-          prep_time_minutes: 5,
-          category_id: 2
-        },
-        {
-          id: 3,
-          title_pt: 'Salmão Grelhado',
-          title_en: 'Grilled Salmon',
-          title_es: 'Salmón a la Parrilla',
-          description_pt: 'Salmão grelhado com ervas finas e legumes no vapor.',
-          description_en: 'Grilled salmon with fine herbs and steamed vegetables.',
-          description_es: 'Salmón a la parrilla con hierbas finas y verduras al vapor.',
-          image_url: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400',
-          difficulty: 3,
-          prep_time_minutes: 30,
-          category_id: 3
-        }
-      ];
+      console.log('Categories response:', categoriesResponse);
+      console.log('Recipes response:', recipesResponse);
       
-      setRecipes(mockRecipes);
+      setCategories(categoriesResponse.categories || []);
+      setRecipes(recipesResponse.recipes || []);
+      
     } catch (error) {
       console.error('Error loading data:', error);
+      setError('Erro ao carregar dados. Verifique se a API está funcionando.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Funções auxiliares movidas para dentro do componente para acessar i18n
+  const loadRecipes = async () => {
+    try {
+      const params = {};
+      
+      if (selectedCategory !== 'all') {
+        params.category_id = selectedCategory;
+      }
+      
+      if (searchTerm.trim()) {
+        params.search = searchTerm.trim();
+      }
+      
+      const response = await apiService.getRecipes(params);
+      console.log('Filtered recipes response:', response);
+      setRecipes(response.recipes || []);
+      
+    } catch (error) {
+      console.error('Error loading recipes:', error);
+    }
+  };
+
   const getRecipeTitle = (recipe) => {
     const lang = i18n.language;
-    return recipe[`title_${lang}`] || recipe.title_pt;
+    return recipe[`title_${lang}`] || recipe.title_pt || 'Título não disponível';
   };
 
   const getRecipeDescription = (recipe) => {
     const lang = i18n.language;
-    return recipe[`description_${lang}`] || recipe.description_pt;
+    return recipe[`description_${lang}`] || recipe.description_pt || 'Descrição não disponível';
+  };
+
+  const getCategoryName = (category) => {
+    const lang = i18n.language;
+    return category[`name_${lang}`] || category.name_pt || category.name || 'Categoria';
   };
 
   const getDifficultyStars = (difficulty) => {
-    return '⭐'.repeat(difficulty) + '☆'.repeat(5 - difficulty);
+    return '⭐'.repeat(difficulty || 1) + '☆'.repeat(5 - (difficulty || 1));
   };
 
-  const filteredRecipes = recipes.filter(recipe => {
-    const matchesSearch = getRecipeTitle(recipe).toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || recipe.category_id.toString() === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const handleDeleteRecipe = async (recipeId) => {
+    if (!window.confirm('Tem certeza que deseja deletar esta receita?')) return;
+    
+    try {
+      await apiService.deleteRecipe(recipeId);
+      await loadData();
+      alert('✅ Receita deletada com sucesso!');
+    } catch (error) {
+      alert(`❌ Erro ao deletar: ${error.message}`);
+    }
+  };
 
   const containerStyle = {
     maxWidth: '1200px',
@@ -134,6 +139,18 @@ const Recipes = () => {
     borderRadius: '8px',
     fontSize: '1rem',
     backgroundColor: 'white',
+    minWidth: '200px',
+  };
+
+  const buttonStyle = {
+    backgroundColor: '#2E8B57',
+    color: 'white',
+    border: 'none',
+    padding: '0.75rem 1.5rem',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    fontWeight: 'bold',
   };
 
   const gridStyle = {
@@ -179,17 +196,17 @@ const Recipes = () => {
     alignItems: 'center',
     fontSize: '0.9rem',
     color: '#888',
+    marginBottom: '1rem',
   };
 
-  const viewButtonStyle = {
-    backgroundColor: '#2E8B57',
+  const deleteButtonStyle = {
+    backgroundColor: '#dc3545',
     color: 'white',
     border: 'none',
     padding: '0.5rem 1rem',
-    borderRadius: '6px',
+    borderRadius: '4px',
     cursor: 'pointer',
-    fontSize: '0.9rem',
-    transition: 'background-color 0.3s',
+    fontSize: '0.8rem',
   };
 
   if (loading) {
@@ -197,7 +214,25 @@ const Recipes = () => {
       <div style={containerStyle}>
         <div style={{ textAlign: 'center', padding: '4rem' }}>
           <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
-          <h2>{t('status.loading')}</h2>
+          <h2>Carregando receitas...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={containerStyle}>
+        <div style={{ textAlign: 'center', padding: '4rem' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>❌</div>
+          <h2 style={{ color: '#dc3545', marginBottom: '1rem' }}>Erro ao carregar</h2>
+          <p style={{ color: '#666', marginBottom: '2rem' }}>{error}</p>
+          <button
+            onClick={loadData}
+            style={buttonStyle}
+          >
+            🔄 Tentar Novamente
+          </button>
         </div>
       </div>
     );
@@ -206,16 +241,16 @@ const Recipes = () => {
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>
-        <h1 style={titleStyle}>{t('dashboard.title')}</h1>
+        <h1 style={titleStyle}>🍽️ {t('nav.recipes')}</h1>
         <p style={{ fontSize: '1.1rem', color: '#666' }}>
-          Descubra receitas deliciosas e saudáveis
+          {recipes.length} receitas encontradas
         </p>
       </div>
 
       <div style={filtersStyle}>
         <input
           type="text"
-          placeholder={t('dashboard.search')}
+          placeholder="🔍 Buscar receitas..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={searchInputStyle}
@@ -226,23 +261,46 @@ const Recipes = () => {
           onChange={(e) => setSelectedCategory(e.target.value)}
           style={selectStyle}
         >
-          <option value="all">{t('dashboard.filter.all')}</option>
+          <option value="all">🏷️ Todas as categorias</option>
           {categories.map(category => (
             <option key={category.id} value={category.id.toString()}>
-              {category.name_pt}
+              {getCategoryName(category)}
             </option>
           ))}
         </select>
+
+        <button
+          onClick={loadData}
+          style={buttonStyle}
+        >
+          🔄 Atualizar
+        </button>
       </div>
 
-      {filteredRecipes.length === 0 ? (
+      {recipes.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-          <h3>{t('dashboard.no_recipes')}</h3>
+          <h3>Nenhuma receita encontrada</h3>
+          <p style={{ color: '#666', marginBottom: '2rem' }}>
+            {searchTerm || selectedCategory !== 'all' 
+              ? 'Tente ajustar os filtros de busca'
+              : 'Ainda não há receitas cadastradas'
+            }
+          </p>
+          <a 
+            href="/admin"
+            style={{
+              ...buttonStyle,
+              textDecoration: 'none',
+              display: 'inline-block'
+            }}
+          >
+            ➕ Cadastrar Primeira Receita
+          </a>
         </div>
       ) : (
         <div style={gridStyle}>
-          {filteredRecipes.map(recipe => (
+          {recipes.map(recipe => (
             <div 
               key={recipe.id} 
               style={cardStyle}
@@ -255,27 +313,46 @@ const Recipes = () => {
                 e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
               }}
             >
-              <img 
-                src={recipe.image_url} 
-                alt={getRecipeTitle(recipe)}
-                style={imageStyle}
-              />
+              {recipe.image_url && (
+                <img 
+                  src={recipe.image_url} 
+                  alt={getRecipeTitle(recipe)}
+                  style={imageStyle}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              )}
               <div style={cardContentStyle}>
                 <h3 style={cardTitleStyle}>{getRecipeTitle(recipe)}</h3>
                 <p style={cardDescStyle}>
-                  {getRecipeDescription(recipe).substring(0, 120)}...
+                  {getRecipeDescription(recipe).substring(0, 120)}
+                  {getRecipeDescription(recipe).length > 120 ? '...' : ''}
                 </p>
                 <div style={cardMetaStyle}>
                   <div>
-                    <div>{t('recipe.difficulty')}: {getDifficultyStars(recipe.difficulty)}</div>
-                    <div>{t('recipe.time')}: {recipe.prep_time_minutes} {t('recipe.minutes')}</div>
+                    <div>Dificuldade: {getDifficultyStars(recipe.difficulty)}</div>
+                    <div>⏱️ {recipe.prep_time_minutes || 0} min</div>
                   </div>
-                  <button 
-                    style={viewButtonStyle}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#236B47'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = '#2E8B57'}
+                  <div style={{ fontSize: '0.8rem', color: '#999' }}>
+                    ID: {recipe.id}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <small style={{ color: '#999' }}>
+                    Categoria: {categories.find(c => c.id === recipe.category_id)?.name_pt || 'N/A'}
+                  </small>
+                  <button
+                    onClick={() => handleDeleteRecipe(recipe.id)}
+                    style={deleteButtonStyle}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#c82333';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#dc3545';
+                    }}
                   >
-                    {t('recipe.view')}
+                    🗑️ Deletar
                   </button>
                 </div>
               </div>
