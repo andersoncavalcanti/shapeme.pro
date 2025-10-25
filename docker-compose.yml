@@ -8,7 +8,7 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - HOTMART_WEBHOOK_SECRET=${HOTMART_WEBHOOK_SECRET}
     env_file:
-      -.env
+      - .env
     depends_on:
       - frontend
 
