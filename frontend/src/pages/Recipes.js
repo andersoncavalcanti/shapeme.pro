@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 
 const Recipes = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [recipes, setRecipes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,14 +73,13 @@ const Recipes = () => {
     }
   };
 
+  // Funções auxiliares movidas para dentro do componente para acessar i18n
   const getRecipeTitle = (recipe) => {
-    const { i18n } = useTranslation();
     const lang = i18n.language;
     return recipe[`title_${lang}`] || recipe.title_pt;
   };
 
   const getRecipeDescription = (recipe) => {
-    const { i18n } = useTranslation();
     const lang = i18n.language;
     return recipe[`description_${lang}`] || recipe.description_pt;
   };
@@ -238,7 +237,7 @@ const Recipes = () => {
 
       {filteredRecipes.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>��</div>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
           <h3>{t('dashboard.no_recipes')}</h3>
         </div>
       ) : (
