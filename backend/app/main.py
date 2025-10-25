@@ -28,3 +28,14 @@ async def health_check():
 @app.get("/api/test")
 async def test_api():
     return {"message": "API endpoint working!"}
+
+@app.get("/api/db-test")
+async def test_database():
+    try:
+        from .database import engine
+        # Teste simples de conexão
+        with engine.connect() as connection:
+            result = connection.execute("SELECT 1")
+            return {"database": "connected", "test_query": "success"}
+    except Exception as e:
+        return {"database": "error", "message": str(e)}
