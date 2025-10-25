@@ -5,6 +5,8 @@ import './i18n';
 import Layout from './components/common/Layout';
 import Home from './pages/Home';
 import Recipes from './pages/Recipes';
+import Categories from './pages/Categories';
+import Admin from './pages/Admin';
 
 // CSS Global básico
 const globalStyles = `
@@ -21,6 +23,7 @@ const globalStyles = `
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: #f8f9fa;
+    line-height: 1.6;
   }
   
   a {
@@ -30,6 +33,24 @@ const globalStyles = `
   
   button {
     font-family: inherit;
+  }
+
+  /* Scrollbar personalizada */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2E8B57;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #236B47;
   }
 `;
 
@@ -45,8 +66,39 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/recipes" element={<Recipes />} />
-          <Route path="/categories" element={<div style={{padding: '2rem', textAlign: 'center'}}><h2>🏷️ Categorias em breve!</h2></div>} />
-          <Route path="/admin" element={<div style={{padding: '2rem', textAlign: 'center'}}><h2>⚙️ Admin em breve!</h2></div>} />
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/admin" element={<Admin />} />
+          {/* Rota 404 */}
+          <Route path="*" element={
+            <div style={{
+              textAlign: 'center', 
+              padding: '4rem',
+              maxWidth: '600px',
+              margin: '0 auto'
+            }}>
+              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🤔</div>
+              <h2 style={{ color: '#2E8B57', marginBottom: '1rem' }}>
+                Página não encontrada
+              </h2>
+              <p style={{ color: '#666', marginBottom: '2rem' }}>
+                A página que você está procurando não existe.
+              </p>
+              <a 
+                href="/" 
+                style={{
+                  backgroundColor: '#2E8B57',
+                  color: 'white',
+                  padding: '1rem 2rem',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  display: 'inline-block',
+                  transition: 'background-color 0.3s'
+                }}
+              >
+                🏠 Voltar ao Início
+              </a>
+            </div>
+          } />
         </Routes>
       </Layout>
     </Router>
