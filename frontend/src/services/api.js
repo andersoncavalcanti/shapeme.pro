@@ -7,6 +7,7 @@ class ApiService {
     };
   }
 
+  // ✅ Define ou limpa o header Authorization
   setAuthHeader(token) {
     if (token) {
       this.headers['Authorization'] = token;
@@ -15,6 +16,7 @@ class ApiService {
     }
   }
 
+  // ✅ Método principal de requisições
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
     
@@ -33,7 +35,8 @@ class ApiService {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
-      
+
+      // Retorna o JSON diretamente
       return await response.json();
     } catch (error) {
       console.error(`API Error (${endpoint}):`, error);
@@ -41,49 +44,47 @@ class ApiService {
     }
   }
 
-  // Health check
-  async health() {
-    return this.request('/health');
+  // ✅ Métodos auxiliares (para compatibilidade com Axios-like API)
+  async get(endpoint, headers = {}) {
+    return this.request(endpoint, { method: 'GET', headers });
   }
 
-  // Categories CRUD
-  async getCategories() {
-    return this.request('/api/categories');
-  }
+  async post(endpoint, body, headers = {}) {
+    let finalBody = body;
 
-  async createCategory(categoryData) {
-    return this.request('/api/categories', {
+    // Se for um objeto comum, converte para JSON automaticamente
+    if (!(body instanceof FormData) && !(body instanceof URLSearchParams) && typeof body === 'object') {
+      finalBody = JSON.stringify(body);
+      headers['Content-Type'] = 'application/json';
+    }
+
+    return this.request(endpoint, {
       method: 'POST',
-      body: JSON.stringify(categoryData),
+      body: finalBody,
+      headers,
     });
   }
 
-  async updateCategory(categoryId, categoryData) {
-    return this.request(`/api/categories/${categoryId}`, {
+  async put(endpoint, body, headers = {}) {
+    return this.request(endpoint, {
       method: 'PUT',
-      body: JSON.stringify(categoryData),
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json', ...headers },
     });
   }
 
-  async deleteCategory(categoryId) {
-    return this.request(`/api/categories/${categoryId}`, {
-      method: 'DELETE',
-    });
+  async delete(endpoint, headers = {}) {
+    return this.request(endpoint, { method: 'DELETE', headers });
   }
 
-  // Recipes CRUD
-  async getRecipes(params = {}) {
-    const queryParams = new URLSearchParams();
-    
-    if (params.skip) queryParams.append('skip', params.skip);
-    if (params.limit) queryParams.append('limit', params.limit);
-    if (params.category_id) queryParams.append('category_id', params.category_id);
-    if (params.search) queryParams.append('search', params.search);
-    
-    const queryString = queryParams.toString();
-    const endpoint = queryString ? `/api/recipes?${queryString}` : '/api/recipes';
-    
-    return this.request(endpoint);
+  // Health check
+  async healthCheck() {
+    return this.request('/api/health');
+  }
+
+  // Exemplos de chamadas específicas (mantidas conforme seu código)
+  async getRecipes() {
+    return this.request('/api/recipes');
   }
 
   async createRecipe(recipeData) {
@@ -106,12 +107,13 @@ class ApiService {
     });
   }
 
-  // Stats
   async getStats() {
     return this.request('/api/stats');
   }
 }
 
+// ✅ Exportações compatíveis com o restante do código
 const apiService = new ApiService();
 export default apiService;
 export { apiService };
+
