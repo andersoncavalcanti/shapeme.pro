@@ -1,104 +1,82 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
-    const { t } = useTranslation();
-    const { login, isAuthenticated } = useAuth();
-    const navigate = useNavigate();
+  const { login } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-    if (isAuthenticated) {
-        navigate('/');
-        return null;
+    try {
+      await login(email, password);
+    } catch (err) {
+      console.error('Erro de login:', err);
+      setError('E-mail ou senha inválidos.');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-        try {
-            await login(email, password);
-        } catch (err) {
-            setError(err.message || t('login.error_default'));
-        } finally {
-            setLoading(false);
-        }
-    };
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+        <h1 className="text-2xl font-semibold mb-6 text-center text-gray-800">
+          Entrar no ShapeMe
+        </h1>
 
-    const formStyle = {
-        maxWidth: '400px',
-        margin: '50px auto',
-        padding: '30px',
-        backgroundColor: '#fff',
-        borderRadius: '8px',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        textAlign: 'center'
-    };
+        <form onSubmit={onSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              E-mail
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="Digite seu e-mail"
+            />
+          </div>
 
-    const inputStyle = {
-        width: '100%',
-        padding: '10px',
-        margin: '10px 0',
-        border: '1px solid #ccc',
-        borderRadius: '4px',
-        boxSizing: 'border-box'
-    };
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Senha
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="Digite sua senha"
+            />
+          </div>
 
-    const buttonStyle = {
-        width: '100%',
-        padding: '10px',
-        backgroundColor: '#2E8B57',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: loading ? 'not-allowed' : 'pointer',
-        marginTop: '20px',
-        fontSize: '16px',
-        opacity: loading ? 0.7 : 1
-    };
+          {error && (
+            <p className="text-red-600 text-sm text-center">{error}</p>
+          )}
 
-    const errorStyle = {
-        color: 'red',
-        marginTop: '10px'
-    };
-
-    return (
-        <div style={formStyle}>
-            <h2>{t('login.title')}</h2>
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <input
-                        type="email"
-                        placeholder={t('login.email_placeholder')}
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        style={inputStyle}
-                    />
-                </div>
-                <div>
-                    <input
-                        type="password"
-                        placeholder={t('login.password_placeholder')}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        style={inputStyle}
-                    />
-                </div>
-                {error && <p style={errorStyle}>{error}</p>}
-                <button type="submit" style={buttonStyle} disabled={loading}>
-                    {loading ? t('login.loading') : t('login.button')}
-                </button>
-            </form>
-        </div>
-    );
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition duration-200 ${
+              loading ? 'opacity-70 cursor-not-allowed' : ''
+            }`}
+          >
+            {loading ? 'Entrando...' : 'Entrar'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default Login;
+

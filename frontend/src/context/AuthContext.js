@@ -34,6 +34,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('API object:', api);
+      console.log('Available methods:', Object.keys(api));
+      
       const response = await api.post(
         '/api/auth/token',
         new URLSearchParams({
