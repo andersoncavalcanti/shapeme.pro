@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 import os
 
 app = FastAPI(title="ShapeMe API", version="1.0.0")
@@ -12,6 +13,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def startup_event():
+    # Criar tabelas na inicialização
+    try:
+        from .database import engine
+        from .base import Base
+        from .models import User, Category, Recipe
+        Base.metadata.create_all(bind=engine)
+        print("✅ Tabelas criadas com sucesso!")
+    except Exception as e:
+        print(f"❌ Erro ao criar tabelas: {e}")
 
 @app.get("/")
 async def root():
@@ -35,7 +48,6 @@ async def test_database():
         from .database import engine
         from sqlalchemy import text
         
-        # Teste simples de conexão
         with engine.connect() as connection:
             result = connection.execute(text("SELECT 1 as test"))
             row = result.fetchone()
@@ -43,32 +55,30 @@ async def test_database():
     except Exception as e:
         return {"database": "error", "message": str(e)}
 
-@app.get("/api/create-tables")
-async def create_tables():
+@app.get("/api/test-insert")
+async def test_insert():
     try:
-        from .database import engine
-        from .base import Base
-        from .models import User, Category, Recipe  # Import para registrar os models
+        from .database import SessionLocal
+        from .models import Category
         
-        # Criar todas as tabelas
-        Base.metadata.create_all(bind=engine)
-        return {"tables": "created", "status": "success"}
-    except Exception as e:
-        return {"tables": "error", "message": str(e)}
-
-@app.get("/api/list-tables")
-async def list_tables():
-    try:
-        from .database import engine
-        from sqlalchemy import text
+        db = SessionLocal()
         
-        with engine.connect() as connection:
-            result = connection.execute(text("""
-                SELECT table_name 
-                FROM information_schema.tables 
-                WHERE table_schema = 'public'
-            """))
-            tables = [row[0] for row in result.fetchall()]
-            return {"tables": tables, "count": len(tables)}
+        # Verificar se já existe uma categoria de teste
+        existing = db.query(Category).filter(Category.name_pt == "Teste").first()
+        if existing:
+            return {"message": "Categoria de teste já existe", "id": existing.id}
+        
+        # Criar categoria de teste
+        test_category = Category(
+            name_pt="Teste",
+            name_en="Test",
+            name_es="Prueba"
+        )
+        db.add(test_category)
+        db.commit()
+        db.refresh(test_category)
+        db.close()
+        
+        return {"message": "Categoria criada com sucesso!", "id": test_category.id}
     except Exception as e:
-        return {"tables": "error", "message": str(e)}
+        return {"insert": "error", "message": str(e)}
