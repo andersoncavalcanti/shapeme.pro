@@ -7,7 +7,7 @@ from jose import JWTError, jwt
 from .config import settings
 
 # Configuração de hash de senha
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
 
 # Funções de hash
 def verify_password(plain_password: str, hashed_password: str) -> bool:
