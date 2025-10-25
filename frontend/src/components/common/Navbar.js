@@ -1,9 +1,21 @@
 import React from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
 
 const Navbar = () => {
   const { t } = useTranslation();
+  const { isAuthenticated, isAdmin, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleAuthClick = () => {
+    if (isAuthenticated) {
+      logout();
+    } else {
+      navigate('/login');
+    }
+  };
 
   const navStyle = {
     backgroundColor: '#2E8B57',
@@ -81,14 +93,30 @@ const Navbar = () => {
           >
             {t('nav.categories')}
           </a>
-          <a 
-            href="/admin" 
-            style={linkStyle}
+          {isAdmin && (
+            <a 
+              href="/admin" 
+              style={linkStyle}
+              onMouseEnter={(e) => Object.assign(e.target.style, linkHoverStyle)}
+              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+            >
+              {t('nav.admin')}
+            </a>
+          )}
+          <button
+            onClick={handleAuthClick}
+            style={{
+              ...linkStyle,
+              backgroundColor: isAuthenticated ? '#dc3545' : '#1976d2',
+              fontWeight: 'bold',
+              border: 'none',
+              cursor: 'pointer'
+            }}
             onMouseEnter={(e) => Object.assign(e.target.style, linkHoverStyle)}
-            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = isAuthenticated ? '#dc3545' : '#1976d2'}
           >
-            {t('nav.admin')}
-          </a>
+            {isAuthenticated ? t('nav.logout') : t('nav.login')}
+          </button>
           
           <LanguageSelector />
         </div>

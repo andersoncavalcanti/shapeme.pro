@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './i18n';
+import App from './App';
 
 // Components
 import Layout from './components/common/Layout';
@@ -11,6 +12,11 @@ import Home from './pages/Home';
 import Recipes from './pages/Recipes';
 import Categories from './pages/Categories';
 import Admin from './pages/Admin';
+import Login from './pages/Login';
+
+// Auth
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/common/ProtectedRoute';
 
 // CSS Global
 const globalStyles = `
@@ -75,18 +81,11 @@ const styleSheet = document.createElement("style");
 styleSheet.innerText = globalStyles;
 document.head.appendChild(styleSheet);
 
-function App() {
+function AppWrapper() {
   return (
-    <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/recipes" element={<Recipes />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/admin" element={<Admin />} />
-          
-          {/* Rota 404 */}
-          <Route path="*" element={
+    <App />
+  );
+}
             <div style={{
               textAlign: 'center', 
               padding: '4rem',

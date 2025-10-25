@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 
 const Home = () => {
-  const { t } = useTranslation();
+  const { user, isAdmin } = useAuth();
+
   const [apiStatus, setApiStatus] = useState('checking');
   const [stats, setStats] = useState({
     categories: 0,
@@ -150,6 +152,16 @@ const Home = () => {
       available: true
     }
   ];
+
+  if (isAdmin) {
+    getStartedActions.push({
+      title: '👑 Admin Dashboard',
+      description: 'Gerencie usuários, categorias e receitas',
+      action: () => window.location.href = '/admin',
+      color: '#ffc107',
+      available: true
+    });
+  }
 
   if (loading) {
     return (
