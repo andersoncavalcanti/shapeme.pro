@@ -1,12 +1,26 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://shapeme.pro';
 
 class ApiService {
+  constructor() {
+    this.headers = {
+      'Content-Type': 'application/json',
+    };
+  }
+
+  setAuthHeader(token) {
+    if (token) {
+      this.headers['Authorization'] = token;
+    } else {
+      delete this.headers['Authorization'];
+    }
+  }
+
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
     
     const config = {
       headers: {
-        'Content-Type': 'application/json',
+        ...this.headers,
         ...options.headers,
       },
       ...options,
