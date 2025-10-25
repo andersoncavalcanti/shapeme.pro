@@ -33,9 +33,12 @@ async def test_api():
 async def test_database():
     try:
         from .database import engine
-        # Teste simples de conexão
+        from sqlalchemy import text
+        
+        # Teste simples de conexão com sintaxe correta
         with engine.connect() as connection:
-            result = connection.execute("SELECT 1")
-            return {"database": "connected", "test_query": "success"}
+            result = connection.execute(text("SELECT 1 as test"))
+            row = result.fetchone()
+            return {"database": "connected", "test_query": "success", "result": row[0]}
     except Exception as e:
         return {"database": "error", "message": str(e)}
