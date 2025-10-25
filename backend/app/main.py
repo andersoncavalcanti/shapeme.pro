@@ -1,11 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from typing import Optional
 import os
 
 # Configuração da aplicação
 app = FastAPI(
-    title="🍃 ShapeMe API v2.0",
-    description="API Completa para Receitas Saudáveis",
+    title="🍃 ShapeMe API - Sistema de Cadastro",
+    description="API completa para cadastro de receitas e categorias",
     version="2.0.0"
 )
 
@@ -29,7 +31,7 @@ async def startup_event():
         # Criar tabelas
         Base.metadata.create_all(bind=engine)
         print("✅ Tabelas criadas/verificadas com sucesso!")
-        print("🚀 ShapeMe API v2.0.0 iniciada!")
+        print("🚀 ShapeMe API - Sistema de Cadastro iniciado!")
         
     except Exception as e:
         print(f"❌ Erro na inicialização: {e}")
@@ -38,7 +40,7 @@ async def startup_event():
 async def root():
     """Endpoint raiz"""
     return {
-        "message": "🍃 ShapeMe API v2.0.0",
+        "message": "🍃 ShapeMe API - Sistema de Cadastro",
         "status": "running",
         "docs": "/docs",
         "version": "2.0.0"
@@ -64,9 +66,11 @@ async def health_check():
         "database": db_status
     }
 
+# ==================== CATEGORIAS ====================
+
 @app.get("/api/categories")
 async def get_categories():
-    """Listar categorias"""
+    """Listar todas as categorias"""
     try:
         from .database import SessionLocal
         from .models import Category
@@ -91,15 +95,172 @@ async def get_categories():
     except Exception as e:
         return {"error": str(e), "categories": [], "total": 0}
 
+@app.post("/api/categories")
+async def create_category(category_data: dict):
+    """Criar nova categoria"""
+    try:
+        from .database import SessionLocal
+        from .models import Category
+        
+        # Validar dados obrigatórios
+        required_fields = ['name_pt', 'name_en', 'name_es']
+        for field in required_fields:
+            if not category_data.get(field):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Campo obrigatório: {field}"
+                )
+        
+        db = SessionLocal()
+        
+        # Verificar se já existe categoria com mesmo nome
+        existing = db.query(Category).filter(
+            Category.name_pt == category_data['name_pt']
+        ).first()
+        
+        if existing:
+            db.close()
+            raise HTTPException(
+                status_code=400,
+                detail="Já existe uma categoria com este nome"
+            )
+        
+        # Criar categoria
+        category = Category(
+            name_pt=category_data['name_pt'],
+            name_en=category_data['name_en'],
+            name_es=category_data['name_es']
+        )
+        
+        db.add(category)
+        db.commit()
+        db.refresh(category)
+        db.close()
+        
+        return {
+            "message": "Categoria criada com sucesso!",
+            "category": {
+                "id": category.id,
+                "name_pt": category.name_pt,
+                "name_en": category.name_en,
+                "name_es": category.name_es,
+                "created_at": category.created_at.isoformat()
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/categories/{category_id}")
+async def update_category(category_id: int, category_data: dict):
+    """Atualizar categoria"""
+    try:
+        from .database import SessionLocal
+        from .models import Category
+        
+        db = SessionLocal()
+        category = db.query(Category).filter(Category.id == category_id).first()
+        
+        if not category:
+            db.close()
+            raise HTTPException(status_code=404, detail="Categoria não encontrada")
+        
+        # Atualizar campos
+        if 'name_pt' in category_data:
+            category.name_pt = category_data['name_pt']
+        if 'name_en' in category_data:
+            category.name_en = category_data['name_en']
+        if 'name_es' in category_data:
+            category.name_es = category_data['name_es']
+        
+        db.commit()
+        db.refresh(category)
+        db.close()
+        
+        return {
+            "message": "Categoria atualizada com sucesso!",
+            "category": {
+                "id": category.id,
+                "name_pt": category.name_pt,
+                "name_en": category.name_en,
+                "name_es": category.name_es,
+                "created_at": category.created_at.isoformat()
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/categories/{category_id}")
+async def delete_category(category_id: int):
+    """Deletar categoria"""
+    try:
+        from .database import SessionLocal
+        from .models import Category, Recipe
+        
+        db = SessionLocal()
+        category = db.query(Category).filter(Category.id == category_id).first()
+        
+        if not category:
+            db.close()
+            raise HTTPException(status_code=404, detail="Categoria não encontrada")
+        
+        # Verificar se há receitas usando esta categoria
+        recipes_count = db.query(Recipe).filter(Recipe.category_id == category_id).count()
+        if recipes_count > 0:
+            db.close()
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Não é possível deletar. Existem {recipes_count} receitas usando esta categoria."
+            )
+        
+        db.delete(category)
+        db.commit()
+        db.close()
+        
+        return {"message": "Categoria deletada com sucesso!"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== RECEITAS ====================
+
 @app.get("/api/recipes")
-async def get_recipes():
-    """Listar receitas"""
+async def get_recipes(
+    skip: int = 0,
+    limit: int = 100,
+    category_id: Optional[int] = None,
+    search: Optional[str] = None
+):
+    """Listar receitas com filtros"""
     try:
         from .database import SessionLocal
         from .models import Recipe
         
         db = SessionLocal()
-        recipes = db.query(Recipe).all()
+        query = db.query(Recipe)
+        
+        # Filtrar por categoria
+        if category_id:
+            query = query.filter(Recipe.category_id == category_id)
+        
+        # Filtrar por busca
+        if search:
+            search_filter = f"%{search}%"
+            query = query.filter(
+                Recipe.title_pt.ilike(search_filter) |
+                Recipe.title_en.ilike(search_filter) |
+                Recipe.title_es.ilike(search_filter)
+            )
+        
+        recipes = query.offset(skip).limit(limit).all()
+        total = query.count()
         db.close()
         
         return {
@@ -120,135 +281,170 @@ async def get_recipes():
                 }
                 for recipe in recipes
             ],
-            "total": len(recipes)
+            "total": total,
+            "skip": skip,
+            "limit": limit
         }
     except Exception as e:
         return {"error": str(e), "recipes": [], "total": 0}
 
-@app.post("/api/admin/seed-data")
-async def seed_data():
-    """Criar dados iniciais"""
+@app.post("/api/recipes")
+async def create_recipe(recipe_data: dict):
+    """Criar nova receita"""
     try:
         from .database import SessionLocal
-        from .models import Category, Recipe
+        from .models import Recipe, Category
+        
+        # Validar dados obrigatórios
+        required_fields = [
+            'title_pt', 'title_en', 'title_es',
+            'description_pt', 'description_en', 'description_es',
+            'difficulty', 'prep_time_minutes', 'category_id'
+        ]
+        
+        for field in required_fields:
+            if field not in recipe_data or recipe_data[field] is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Campo obrigatório: {field}"
+                )
         
         db = SessionLocal()
         
-        # Verificar se já existem dados
-        existing_categories = db.query(Category).count()
-        if existing_categories > 0:
-            existing_recipes = db.query(Recipe).count()
+        # Verificar se a categoria existe
+        category = db.query(Category).filter(Category.id == recipe_data['category_id']).first()
+        if not category:
             db.close()
-            return {
-                "message": "Dados já existem", 
-                "categories": existing_categories,
-                "recipes": existing_recipes
-            }
+            raise HTTPException(status_code=400, detail="Categoria não encontrada")
         
-        # Criar categorias
-        categories_data = [
-            {"name_pt": "Saladas", "name_en": "Salads", "name_es": "Ensaladas"},
-            {"name_pt": "Smoothies", "name_en": "Smoothies", "name_es": "Batidos"},
-            {"name_pt": "Pratos Principais", "name_en": "Main Dishes", "name_es": "Platos Principales"},
-            {"name_pt": "Sobremesas", "name_en": "Desserts", "name_es": "Postres"},
-            {"name_pt": "Lanches", "name_en": "Snacks", "name_es": "Aperitivos"}
-        ]
+        # Validar dificuldade
+        if recipe_data['difficulty'] < 1 or recipe_data['difficulty'] > 5:
+            db.close()
+            raise HTTPException(status_code=400, detail="Dificuldade deve ser entre 1 e 5")
         
-        created_categories = []
-        for cat_data in categories_data:
-            category = Category(**cat_data)
-            db.add(category)
-            db.commit()
-            db.refresh(category)
-            created_categories.append(category)
+        # Criar receita
+        recipe = Recipe(
+            title_pt=recipe_data['title_pt'],
+            title_en=recipe_data['title_en'],
+            title_es=recipe_data['title_es'],
+            description_pt=recipe_data['description_pt'],
+            description_en=recipe_data['description_en'],
+            description_es=recipe_data['description_es'],
+            image_url=recipe_data.get('image_url', ''),
+            difficulty=int(recipe_data['difficulty']),
+            prep_time_minutes=int(recipe_data['prep_time_minutes']),
+            category_id=int(recipe_data['category_id'])
+        )
         
-        # Criar receitas
-        recipes_data = [
-            {
-                "title_pt": "Salada de Quinoa com Vegetais",
-                "title_en": "Quinoa Salad with Vegetables",
-                "title_es": "Ensalada de Quinoa con Vegetales",
-                "description_pt": "Uma salada nutritiva e saborosa com quinoa, vegetais frescos e molho especial de limão.",
-                "description_en": "A nutritious and tasty salad with quinoa, fresh vegetables and special lemon dressing.",
-                "description_es": "Una ensalada nutritiva y sabrosa con quinoa, vegetales frescos y aderezo especial de limón.",
-                "image_url": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400",
-                "difficulty": 2,
-                "prep_time_minutes": 20,
-                "category_id": created_categories[0].id
-            },
-            {
-                "title_pt": "Smoothie Verde Detox",
-                "title_en": "Green Detox Smoothie",
-                "title_es": "Batido Verde Detox",
-                "description_pt": "Smoothie refrescante com espinafre, banana, maçã e água de coco para desintoxicar o corpo.",
-                "description_en": "Refreshing smoothie with spinach, banana, apple and coconut water to detox the body.",
-                "description_es": "Batido refrescante con espinacas, plátano, manzana y agua de coco para desintoxicar el cuerpo.",
-                "image_url": "https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=400",
-                "difficulty": 1,
-                "prep_time_minutes": 5,
-                "category_id": created_categories[1].id
-            },
-            {
-                "title_pt": "Salmão Grelhado com Ervas",
-                "title_en": "Grilled Salmon with Herbs",
-                "title_es": "Salmón a la Parrilla con Hierbas",
-                "description_pt": "Salmão grelhado com ervas finas, acompanhado de legumes no vapor e arroz integral.",
-                "description_en": "Grilled salmon with fine herbs, served with steamed vegetables and brown rice.",
-                "description_es": "Salmón a la parrilla con hierbas finas, acompañado de verduras al vapor y arroz integral.",
-                "image_url": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400",
-                "difficulty": 3,
-                "prep_time_minutes": 30,
-                "category_id": created_categories[2].id
-            },
-            {
-                "title_pt": "Mousse de Chocolate com Abacate",
-                "title_en": "Chocolate Avocado Mousse",
-                "title_es": "Mousse de Chocolate con Aguacate",
-                "description_pt": "Sobremesa cremosa e saudável feita com abacate, cacau e mel, rica em nutrientes.",
-                "description_en": "Creamy and healthy dessert made with avocado, cocoa and honey, rich in nutrients.",
-                "description_es": "Postre cremoso y saludable hecho con aguacate, cacao y miel, rico en nutrientes.",
-                "image_url": "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=400",
-                "difficulty": 2,
-                "prep_time_minutes": 15,
-                "category_id": created_categories[3].id
-            },
-            {
-                "title_pt": "Energy Balls de Tâmara",
-                "title_en": "Date Energy Balls",
-                "title_es": "Bolitas Energéticas de Dátil",
-                "description_pt": "Lanchinhos energéticos feitos com tâmaras, nozes e coco, perfeitos para o pré-treino.",
-                "description_en": "Energy snacks made with dates, nuts and coconut, perfect for pre-workout.",
-                "description_es": "Aperitivos energéticos hechos con dátiles, nueces y coco, perfectos para antes del entrenamiento.",
-                "image_url": "https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=400",
-                "difficulty": 1,
-                "prep_time_minutes": 10,
-                "category_id": created_categories[4].id
-            }
-        ]
-        
-        created_recipes = []
-        for recipe_data in recipes_data:
-            recipe = Recipe(**recipe_data)
-            db.add(recipe)
-            db.commit()
-            db.refresh(recipe)
-            created_recipes.append(recipe)
-        
+        db.add(recipe)
+        db.commit()
+        db.refresh(recipe)
         db.close()
         
         return {
-            "message": "Dados iniciais criados com sucesso!",
-            "categories_created": len(created_categories),
-            "recipes_created": len(created_recipes),
-            "status": "success"
+            "message": "Receita criada com sucesso!",
+            "recipe": {
+                "id": recipe.id,
+                "title_pt": recipe.title_pt,
+                "title_en": recipe.title_en,
+                "title_es": recipe.title_es,
+                "created_at": recipe.created_at.isoformat()
+            }
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
-        return {"error": str(e), "status": "error"}
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/admin/stats")
-async def get_admin_stats():
-    """Estatísticas para o admin"""
+@app.put("/api/recipes/{recipe_id}")
+async def update_recipe(recipe_id: int, recipe_data: dict):
+    """Atualizar receita"""
+    try:
+        from .database import SessionLocal
+        from .models import Recipe, Category
+        
+        db = SessionLocal()
+        recipe = db.query(Recipe).filter(Recipe.id == recipe_id).first()
+        
+        if not recipe:
+            db.close()
+            raise HTTPException(status_code=404, detail="Receita não encontrada")
+        
+        # Verificar categoria se fornecida
+        if 'category_id' in recipe_data:
+            category = db.query(Category).filter(Category.id == recipe_data['category_id']).first()
+            if not category:
+                db.close()
+                raise HTTPException(status_code=400, detail="Categoria não encontrada")
+        
+        # Validar dificuldade se fornecida
+        if 'difficulty' in recipe_data:
+            if recipe_data['difficulty'] < 1 or recipe_data['difficulty'] > 5:
+                db.close()
+                raise HTTPException(status_code=400, detail="Dificuldade deve ser entre 1 e 5")
+        
+        # Atualizar campos
+        updatable_fields = [
+            'title_pt', 'title_en', 'title_es',
+            'description_pt', 'description_en', 'description_es',
+            'image_url', 'difficulty', 'prep_time_minutes', 'category_id'
+        ]
+        
+        for field in updatable_fields:
+            if field in recipe_data:
+                setattr(recipe, field, recipe_data[field])
+        
+        db.commit()
+        db.refresh(recipe)
+        db.close()
+        
+        return {
+            "message": "Receita atualizada com sucesso!",
+            "recipe": {
+                "id": recipe.id,
+                "title_pt": recipe.title_pt,
+                "title_en": recipe.title_en,
+                "title_es": recipe.title_es,
+                "created_at": recipe.created_at.isoformat()
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/recipes/{recipe_id}")
+async def delete_recipe(recipe_id: int):
+    """Deletar receita"""
+    try:
+        from .database import SessionLocal
+        from .models import Recipe
+        
+        db = SessionLocal()
+        recipe = db.query(Recipe).filter(Recipe.id == recipe_id).first()
+        
+        if not recipe:
+            db.close()
+            raise HTTPException(status_code=404, detail="Receita não encontrada")
+        
+        db.delete(recipe)
+        db.commit()
+        db.close()
+        
+        return {"message": "Receita deletada com sucesso!"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== ESTATÍSTICAS ====================
+
+@app.get("/api/stats")
+async def get_stats():
+    """Estatísticas gerais"""
     try:
         from .database import SessionLocal
         from .models import Category, Recipe
@@ -269,7 +465,7 @@ async def get_admin_stats():
 # Manter endpoints antigos para compatibilidade
 @app.get("/api/test")
 async def test_api():
-    return {"message": "API v2.0.0 funcionando!", "timestamp": "2024-10-25"}
+    return {"message": "API Sistema de Cadastro funcionando!", "timestamp": "2024-10-25"}
 
 @app.get("/api/db-test")
 async def test_database():

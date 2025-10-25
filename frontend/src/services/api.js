@@ -1,69 +1,101 @@
-import axios from 'axios';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://shapeme.pro';
 
-// Configurar base URL baseada no ambiente
-const getBaseURL = () => {
-  const hostname = window.location.hostname;
-  
-  if (hostname === 'api.shapeme.pro') {
-    return 'http://api.shapeme.pro';
-  } else if (hostname.includes('shapeme.pro')) {
-    return `http://${hostname}`;
-  } else {
-    return 'http://localhost';
+class ApiService {
+  async request(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    try {
+      const response = await fetch(url, config);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`API Error (${endpoint}):`, error);
+      throw error;
+    }
   }
-};
 
-const api = axios.create({
-  baseURL: getBaseURL(),
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Interceptor para logs
-api.interceptors.request.use(
-  (config) => {
-    console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
-    return config;
-  },
-  (error) => {
-    console.error('❌ API Request Error:', error);
-    return Promise.reject(error);
-  }
-);
-
-api.interceptors.response.use(
-  (response) => {
-    console.log(`✅ API Response: ${response.status} ${response.config.url}`);
-    return response;
-  },
-  (error) => {
-    console.error('❌ API Response Error:', error.response?.status, error.message);
-    return Promise.reject(error);
-  }
-);
-
-// Serviços da API
-export const apiService = {
   // Health check
-  health: () => api.get('/health'),
-  
-  // Categorias
-  getCategories: () => api.get('/api/categories'),
-  createCategory: (data) => api.post('/api/categories', data),
-  
-  // Receitas (placeholder - implementaremos no próximo sprint)
-  getRecipes: () => api.get('/api/recipes'),
-  getRecipe: (id) => api.get(`/api/recipes/${id}`),
-  createRecipe: (data) => api.post('/api/recipes', data),
-  updateRecipe: (id, data) => api.put(`/api/recipes/${id}`, data),
-  deleteRecipe: (id) => api.delete(`/api/recipes/${id}`),
-  
-  // Testes
-  testAPI: () => api.get('/api/test'),
-  testDB: () => api.get('/api/db-test'),
-  testInsert: () => api.get('/api/test-insert'),
-};
+  async health() {
+    return this.request('/health');
+  }
 
-export default api;
+  // Categories CRUD
+  async getCategories() {
+    return this.request('/api/categories');
+  }
+
+  async createCategory(categoryData) {
+    return this.request('/api/categories', {
+      method: 'POST',
+      body: JSON.stringify(categoryData),
+    });
+  }
+
+  async updateCategory(categoryId, categoryData) {
+    return this.request(`/api/categories/${categoryId}`, {
+      method: 'PUT',
+      body: JSON.stringify(categoryData),
+    });
+  }
+
+  async deleteCategory(categoryId) {
+    return this.request(`/api/categories/${categoryId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Recipes CRUD
+  async getRecipes(params = {}) {
+    const queryParams = new URLSearchParams();
+    
+    if (params.skip) queryParams.append('skip', params.skip);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.category_id) queryParams.append('category_id', params.category_id);
+    if (params.search) queryParams.append('search', params.search);
+    
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/api/recipes?${queryString}` : '/api/recipes';
+    
+    return this.request(endpoint);
+  }
+
+  async createRecipe(recipeData) {
+    return this.request('/api/recipes', {
+      method: 'POST',
+      body: JSON.stringify(recipeData),
+    });
+  }
+
+  async updateRecipe(recipeId, recipeData) {
+    return this.request(`/api/recipes/${recipeId}`, {
+      method: 'PUT',
+      body: JSON.stringify(recipeData),
+    });
+  }
+
+  async deleteRecipe(recipeId) {
+    return this.request(`/api/recipes/${recipeId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Stats
+  async getStats() {
+    return this.request('/api/stats');
+  }
+}
+
+export const apiService = new ApiService();
