@@ -51,6 +51,14 @@ const Layout = ({ children }) => {
     cursor: 'pointer',
   };
 
+  const adminLinkStyle = {
+    ...linkStyle,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    padding: '0.5rem 1rem',
+    borderRadius: '20px',
+    fontSize: '0.9rem',
+  };
+
   const footerStyle = {
     backgroundColor: '#1a5d3a',
     color: 'white',
@@ -77,13 +85,16 @@ const Layout = ({ children }) => {
             <a href="/categories" style={linkStyle}>
               🏷️ {t('nav.categories')}
             </a>
+            <a href="/admin" style={adminLinkStyle}>
+              ⚙️ Admin
+            </a>
             <a 
               href="http://shapeme.pro/docs" 
                
               rel="noopener noreferrer"
               style={linkStyle}
             >
-              �� API Docs
+              📚 API Docs
             </a>
           </div>
 

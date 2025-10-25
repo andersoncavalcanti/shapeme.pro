@@ -10,6 +10,7 @@ import Layout from './components/common/Layout';
 import Home from './pages/Home';
 import Recipes from './pages/Recipes';
 import Categories from './pages/Categories';
+import Admin from './pages/Admin';
 
 // CSS Global
 const globalStyles = `
@@ -82,6 +83,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/recipes" element={<Recipes />} />
           <Route path="/categories" element={<Categories />} />
+          <Route path="/admin" element={<Admin />} />
           
           {/* Rota 404 */}
           <Route path="*" element={
