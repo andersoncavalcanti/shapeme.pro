@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..schemas.user import UserCreate, UserResponse, UserBase
-from ..models.init import User
+from ..models import User
 from ..security import get_password_hash
 from ..services.user_service import get_user_by_email, create_user as create_user_service
 

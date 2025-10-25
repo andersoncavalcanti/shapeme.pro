@@ -5,7 +5,7 @@ from jose import JWTError
 
 from .security import decode_access_token
 from .database import get_db
-from .models.init import User
+from .models import User
 from .schemas.user import TokenData
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/token")

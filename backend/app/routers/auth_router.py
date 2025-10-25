@@ -5,7 +5,7 @@ from datetime import timedelta
 
 from ..database import get_db
 from ..schemas.user import Token
-from ..models.init import User
+from ..models import User
 from ..security import verify_password, create_access_token
 from ..config import settings
 
