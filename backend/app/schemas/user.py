@@ -7,6 +7,7 @@ class UserBase(BaseModel):
     name: str
 
 class UserCreate(UserBase):
+    password: str
     hotmart_transaction_id: Optional[str] = None
 
 class UserUpdate(BaseModel):
@@ -22,3 +23,12 @@ class UserResponse(UserBase):
     
     class Config:
         from_attributes = True
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+class TokenData(BaseModel):
+    id: Optional[int] = None
+    email: Optional[EmailStr] = None
+    is_admin: Optional[bool] = None
