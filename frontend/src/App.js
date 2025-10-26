@@ -1,39 +1,47 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
-// Components
-import Layout from './components/common/Layout';
-import ProtectedRoute from './components/common/ProtectedRoute';
-import { AuthProvider } from './context/AuthContext';
-
-// Pages
-import Home from './pages/Home';
-import Recipes from './pages/Recipes';
-import Categories from './pages/Categories';
-import Admin from './pages/Admin';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from './routes/ProtectedRoute';
 import Login from './pages/Login';
+
+// 🔹 Exemplo simples de página inicial protegida
+const Dashboard = () => (
+  <div className="p-6">
+    <h1 className="text-2xl font-semibold">Dashboard</h1>
+    <p className="mt-2 text-gray-600">Você está autenticado.</p>
+  </div>
+);
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <Layout>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            
-            {/* Rotas Protegidas */}
-            <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-            <Route path="/recipes" element={<ProtectedRoute><Recipes /></ProtectedRoute>} />
-            <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Admin /></ProtectedRoute>} />
-            
-            {/* Rota 404 - Mantida no index.js */}
-            
-          </Routes>
-        </Layout>
-      </AuthProvider>
-    </Router>
+    <Routes>
+      {/* Rota de login: nunca protegida */}
+      <Route path="/login" element={<Login />} />
+
+      {/* Rota raiz protegida */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* (Opcional) Exemplo de outra rota protegida */}
+      {/* <Route
+        path="/recipes"
+        element={
+          <ProtectedRoute>
+            <Recipes />
+          </ProtectedRoute>
+        }
+      /> */}
+
+      {/* Qualquer rota desconhecida → vai pra raiz (que é protegida) */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
 export default App;
+

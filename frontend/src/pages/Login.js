@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // ✅ Se já autenticado, não fica preso aqui
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -15,6 +21,7 @@ const Login = () => {
 
     try {
       await login(email, password);
+      // o AuthContext navega para "/", então nada a fazer aqui
     } catch (err) {
       console.error('Erro de login:', err);
       setError('E-mail ou senha inválidos.');
@@ -79,4 +86,3 @@ const Login = () => {
 };
 
 export default Login;
-
