@@ -7,11 +7,12 @@ import { AuthProvider } from './context/AuthContext';
 // 🔹 CSS gerado pelo Tailwind CLI (prebuild/prestart)
 import './index.css';
 
+// 🔹 Inicializa i18n do projeto (garante LanguageSwitcher)
+import './i18n';
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    {/* O Router precisa vir ANTES do AuthProvider,
-        pois o AuthProvider usa useNavigate internamente */}
     <BrowserRouter>
       <AuthProvider>
         <App />
