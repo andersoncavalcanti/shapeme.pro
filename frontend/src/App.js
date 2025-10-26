@@ -63,6 +63,17 @@ function App() {
         }
       />
 
+      <Route
+        path="/categories/new"
+        element={
+          <ProtectedRoute>
+            <WithLayout>
+              <CategoryCreate /> {/* sua página de criação */}
+            </WithLayout>
+          </ProtectedRoute>
+        }
+      />
+
       {/* Qualquer rota desconhecida → raiz */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 
 const Categories = () => {
@@ -16,15 +17,19 @@ const Categories = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await apiService.getCategories();
       console.log('Categories response:', response);
-      
+
       setCategories(response.categories || []);
-      
     } catch (error) {
       console.error('Error loading categories:', error);
-      setError('Erro ao carregar categorias. Verifique se a API está funcionando.');
+      setError(
+        t(
+          'categories.loadError',
+          'Erro ao carregar categorias. Verifique se a API está funcionando.'
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -32,18 +37,35 @@ const Categories = () => {
 
   const getCategoryName = (category) => {
     const lang = i18n.language;
-    return category[`name_${lang}`] || category.name_pt || category.name || 'Categoria';
+    return (
+      category[`name_${lang}`] ||
+      category.name_pt ||
+      category.name ||
+      t('categories.fallbackName', 'Categoria')
+    );
   };
 
   const handleDeleteCategory = async (categoryId) => {
-    if (!window.confirm('Tem certeza que deseja deletar esta categoria?')) return;
-    
+    if (
+      !window.confirm(
+        t(
+          'categories.deleteConfirm',
+          'Tem certeza que deseja deletar esta categoria?'
+        )
+      )
+    )
+      return;
+
     try {
       await apiService.deleteCategory(categoryId);
       await loadCategories();
-      alert('✅ Categoria deletada com sucesso!');
+      alert(t('categories.deleteSuccess', '✅ Categoria deletada com sucesso!'));
     } catch (error) {
-      alert(`❌ Erro ao deletar: ${error.message}`);
+      alert(
+        t('categories.deleteError', '❌ Erro ao deletar: {{msg}}', {
+          msg: error.message,
+        })
+      );
     }
   };
 
@@ -126,7 +148,7 @@ const Categories = () => {
       <div style={containerStyle}>
         <div style={{ textAlign: 'center', padding: '4rem' }}>
           <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
-          <h2>Carregando categorias...</h2>
+          <h2>{t('categories.loading', 'Carregando categorias...')}</h2>
         </div>
       </div>
     );
@@ -137,13 +159,12 @@ const Categories = () => {
       <div style={containerStyle}>
         <div style={{ textAlign: 'center', padding: '4rem' }}>
           <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>❌</div>
-          <h2 style={{ color: '#dc3545', marginBottom: '1rem' }}>Erro ao carregar</h2>
+          <h2 style={{ color: '#dc3545', marginBottom: '1rem' }}>
+            {t('categories.errorTitle', 'Erro ao carregar')}
+          </h2>
           <p style={{ color: '#666', marginBottom: '2rem' }}>{error}</p>
-          <button
-            onClick={loadCategories}
-            style={buttonStyle}
-          >
-            🔄 Tentar Novamente
+          <button onClick={loadCategories} style={buttonStyle}>
+            {t('categories.retry', '🔄 Tentar Novamente')}
           </button>
         </div>
       </div>
@@ -155,77 +176,92 @@ const Categories = () => {
       <div style={headerStyle}>
         <h1 style={titleStyle}>🏷️ {t('nav.categories')}</h1>
         <p style={{ fontSize: '1.1rem', color: '#666' }}>
-          {categories.length} categorias cadastradas
+          {t('{{count}} categorias cadastradas', {
+            count: categories.length,
+            defaultValue: '{{count}} categorias cadastradas',
+          })}
         </p>
       </div>
 
       <div style={actionsStyle}>
-        <button
-          onClick={loadCategories}
-          style={buttonStyle}
-        >
-          🔄 Atualizar Lista
+        <button onClick={loadCategories} style={buttonStyle}>
+          {t('categories.refresh', '🔄 Atualizar Lista')}
         </button>
-        <a
-          href="/admin"
-          style={buttonStyle}
-        >
-          ➕ Cadastrar Nova Categoria
-        </a>
+
+        {/* Antes: href="/admin" → Agora: rota correta de criação */}
+        <Link to="/categories/new" style={buttonStyle}>
+          {t('categories.create', '➕ Cadastrar Nova Categoria')}
+        </Link>
       </div>
 
       {categories.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📂</div>
-          <h3>Nenhuma categoria encontrada</h3>
+          <h3>{t('categories.empty', 'Nenhuma categoria encontrada')}</h3>
           <p style={{ color: '#666', marginBottom: '2rem' }}>
-            Ainda não há categorias cadastradas no sistema.
+            {t(
+              'categories.emptyHint',
+              'Ainda não há categorias cadastradas no sistema.'
+            )}
           </p>
-          <a 
-            href="/admin"
-            style={buttonStyle}
-          >
-            ➕ Cadastrar Primeira Categoria
-          </a>
+          <Link to="/categories/new" style={buttonStyle}>
+            {t('categories.createFirst', '➕ Cadastrar Primeira Categoria')}
+          </Link>
         </div>
       ) : (
         <div style={gridStyle}>
-          {categories.map(category => (
-            <div 
-              key={category.id} 
+          {categories.map((category) => (
+            <div
+              key={category.id}
               style={cardStyle}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-5px)';
-                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                e.currentTarget.style.boxShadow =
+                  '0 8px 25px rgba(0,0,0,0.15)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+                e.currentTarget.style.boxShadow =
+                  '0 4px 6px rgba(0,0,0,0.1)';
               }}
             >
               <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏷️</div>
-              
-              <h3 style={cardTitleStyle}>
-                {getCategoryName(category)}
-              </h3>
-              
+
+              <h3 style={cardTitleStyle}>{getCategoryName(category)}</h3>
+
               <div style={languageListStyle}>
-                <div><strong>🇧🇷 Português:</strong> {category.name_pt}</div>
-                <div><strong>🇺🇸 English:</strong> {category.name_en}</div>
-                <div><strong>🇪🇸 Español:</strong> {category.name_es}</div>
+                <div>
+                  <strong>🇧🇷 {t('lang.pt', 'Português')}:</strong>{' '}
+                  {category.name_pt}
+                </div>
+                <div>
+                  <strong>🇺🇸 {t('lang.en', 'English')}:</strong>{' '}
+                  {category.name_en}
+                </div>
+                <div>
+                  <strong>🇪🇸 {t('lang.es', 'Español')}:</strong>{' '}
+                  {category.name_es}
+                </div>
               </div>
 
-              <div style={{ 
-                fontSize: '0.9rem', 
-                color: '#666',
-                marginBottom: '1rem',
-                padding: '0.5rem',
-                backgroundColor: '#f8f9fa',
-                borderRadius: '4px'
-              }}>
-                <div><strong>ID:</strong> {category.id}</div>
+              <div
+                style={{
+                  fontSize: '0.9rem',
+                  color: '#666',
+                  marginBottom: '1rem',
+                  padding: '0.5rem',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '4px',
+                }}
+              >
+                <div>
+                  <strong>{t('categories.id', 'ID')}:</strong> {category.id}
+                </div>
                 {category.created_at && (
-                  <div><strong>Criado em:</strong> {new Date(category.created_at).toLocaleDateString('pt-BR')}</div>
+                  <div>
+                    <strong>{t('categories.createdAt', 'Criado em')}:</strong>{' '}
+                    {new Date(category.created_at).toLocaleDateString('pt-BR')}
+                  </div>
                 )}
               </div>
 
@@ -239,7 +275,7 @@ const Categories = () => {
                   e.target.style.backgroundColor = '#dc3545';
                 }}
               >
-                🗑️ Deletar Categoria
+                {t('categories.delete', '🗑️ Deletar Categoria')}
               </button>
             </div>
           ))}
@@ -247,37 +283,46 @@ const Categories = () => {
       )}
 
       {/* Informações adicionais */}
-      <div style={{
-        backgroundColor: '#e8f5e8',
-        border: '1px solid #2E8B57',
-        borderRadius: '8px',
-        padding: '2rem',
-        textAlign: 'center',
-        marginTop: '3rem'
-      }}>
+      <div
+        style={{
+          backgroundColor: '#e8f5e8',
+          border: '1px solid #2E8B57',
+          borderRadius: '8px',
+          padding: '2rem',
+          textAlign: 'center',
+          marginTop: '3rem',
+        }}
+      >
         <h3 style={{ color: '#2E8B57', marginBottom: '1rem' }}>
-          💡 Sobre as Categorias
+          {t('categories.aboutTitle', '💡 Sobre as Categorias')}
         </h3>
         <p style={{ color: '#2E8B57', marginBottom: '1rem' }}>
-          As categorias ajudam a organizar suas receitas. Cada categoria tem nomes em três idiomas 
-          para suporte multilíngue completo.
+          {t(
+            'categories.aboutText',
+            'As categorias ajudam a organizar suas receitas. Cada categoria tem nomes em três idiomas para suporte multilíngue completo.'
+          )}
         </p>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a
-            href="/admin"
-            style={buttonStyle}
-          >
-            ⚙️ Ir para Admin
-          </a>
-          <a
-            href="/recipes"
+        <div
+          style={{
+            display: 'flex',
+            gap: '1rem',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          {/* Antes: href="/admin" */}
+          <Link to="/categories/new" style={buttonStyle}>
+            {t('categories.createShort', '➕ Nova Categoria')}
+          </Link>
+          <Link
+            to="/recipes"
             style={{
               ...buttonStyle,
-              backgroundColor: '#1976d2'
+              backgroundColor: '#1976d2',
             }}
           >
-            🍽️ Ver Receitas
-          </a>
+            {t('categories.viewRecipes', '🍽️ Ver Receitas')}
+          </Link>
         </div>
       </div>
     </div>
