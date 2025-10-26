@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 
 const Categories = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -188,10 +189,16 @@ const Categories = () => {
           {t('categories.refresh', '🔄 Atualizar Lista')}
         </button>
 
-        {/* Antes: href="/admin" → Agora: rota correta de criação */}
-        <Link to="/categories/new" style={buttonStyle}>
+        {/* 🔒 Usa navigate para evitar qualquer interceptação do Link */}
+        <button
+          onClick={() => {
+            console.log('[Categories] indo para /categories/new');
+            navigate('/categories/new');
+          }}
+          style={buttonStyle}
+        >
           {t('categories.create', '➕ Cadastrar Nova Categoria')}
-        </Link>
+        </button>
       </div>
 
       {categories.length === 0 ? (
@@ -204,9 +211,15 @@ const Categories = () => {
               'Ainda não há categorias cadastradas no sistema.'
             )}
           </p>
-          <Link to="/categories/new" style={buttonStyle}>
+          <button
+            onClick={() => {
+              console.log('[Categories] indo para /categories/new (vazio)');
+              navigate('/categories/new');
+            }}
+            style={buttonStyle}
+          >
             {t('categories.createFirst', '➕ Cadastrar Primeira Categoria')}
-          </Link>
+          </button>
         </div>
       ) : (
         <div style={gridStyle}>
@@ -286,7 +299,7 @@ const Categories = () => {
       <div
         style={{
           backgroundColor: '#e8f5e8',
-          border: '1px solid #2E8B57',
+          border: '1px solid '#2E8B57',
           borderRadius: '8px',
           padding: '2rem',
           textAlign: 'center',
@@ -310,10 +323,16 @@ const Categories = () => {
             flexWrap: 'wrap',
           }}
         >
-          {/* Antes: href="/admin" */}
-          <Link to="/categories/new" style={buttonStyle}>
+          <button
+            onClick={() => {
+              console.log('[Categories] indo para /categories/new (rodapé)');
+              navigate('/categories/new');
+            }}
+            style={buttonStyle}
+          >
             {t('categories.createShort', '➕ Nova Categoria')}
-          </Link>
+          </button>
+
           <Link
             to="/recipes"
             style={{
