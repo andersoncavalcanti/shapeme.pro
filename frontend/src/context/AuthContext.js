@@ -1,3 +1,4 @@
+// frontend/src/context/AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -10,8 +11,8 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Restaura token do localStorage (se houver) e busca usuário
     const token = localStorage.getItem('token');
+    console.log('[Auth] useEffect token restaurado?', !!token);
     if (token) {
       api.setAuthHeader(`Bearer ${token}`);
       fetchUser();
@@ -23,11 +24,12 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = async () => {
     try {
+      console.log('[Auth] fetchUser: chamando /api/users/me');
       const me = await api.get('/api/users/me');
+      console.log('[Auth] fetchUser OK:', me);
       setUser(me);
     } catch (error) {
-      // Token inválido/expirado → limpa e segue para login
-      console.error('Erro ao buscar usuário:', error);
+      console.error('[Auth] Erro ao buscar usuário:', error);
       localStorage.removeItem('token');
       api.setAuthHeader(null);
       setUser(null);
@@ -37,25 +39,34 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password) => {
-    // Faz login no backend (FastAPI espera x-www-form-urlencoded)
+    console.log('[Auth] login() inicio', { email });
+    // 🔎 DEBUG: certificar que o handler está sendo chamado
+    console.log('[Auth] preparando POST /api/auth/token');
+
+    const form = new URLSearchParams({
+      username: email,
+      password: password,
+    });
+
+    // 🔎 DEBUG: logar o que vamos enviar
+    console.log('[Auth] POST body preview:', form.toString());
+
     const tokenResp = await api.post(
       '/api/auth/token',
-      new URLSearchParams({
-        username: email,
-        password: password,
-      }),
+      form,
       { 'Content-Type': 'application/x-www-form-urlencoded' }
     );
+
+    console.log('[Auth] tokenResp:', tokenResp);
 
     if (!tokenResp || !tokenResp.access_token) {
       throw new Error('Token não recebido');
     }
 
-    // Persiste token e configura Authorization para as próximas requests
     localStorage.setItem('token', tokenResp.access_token);
     api.setAuthHeader(`Bearer ${tokenResp.access_token}`);
 
-    // Atualiza estado do usuário e navega
+    console.log('[Auth] token salvo, buscando /me...');
     await fetchUser();
     navigate('/');
   };
@@ -75,3 +86,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
