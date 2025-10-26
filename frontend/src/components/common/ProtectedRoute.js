@@ -1,11 +1,12 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+// 👇 estamos em components/common → suba duas pastas até src/, depois entre em context/
+import { useAuth } from '../../context/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
-  // Enquanto carrega /api/users/me, não decide ainda
+  // Enquanto verifica /api/users/me, mostra um loading simples
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -14,14 +15,13 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  // Se não tem usuário, manda pro /login
+  // Se não autenticado, manda para /login
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Autenticado → renderiza rota protegida
+  // Autenticado → renderiza a rota protegida
   return children;
 };
 
 export default ProtectedRoute;
-

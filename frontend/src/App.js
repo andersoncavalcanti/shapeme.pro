@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import Login from './pages/Login';
 
-// 🔹 Exemplo simples de página inicial protegida
+// Página protegida de exemplo (troque pela sua Home/Dashboard real se quiser)
 const Dashboard = () => (
   <div className="p-6">
     <h1 className="text-2xl font-semibold">Dashboard</h1>
@@ -14,10 +14,10 @@ const Dashboard = () => (
 function App() {
   return (
     <Routes>
-      {/* Rota de login: nunca protegida */}
+      {/* Rota pública */}
       <Route path="/login" element={<Login />} />
 
-      {/* Rota raiz protegida */}
+      {/* Raiz protegida */}
       <Route
         path="/"
         element={
@@ -27,8 +27,8 @@ function App() {
         }
       />
 
-      {/* (Opcional) Exemplo de outra rota protegida */}
-      {/* <Route
+      {/* Outras rotas protegidas (exemplo)
+      <Route
         path="/recipes"
         element={
           <ProtectedRoute>
@@ -37,11 +37,10 @@ function App() {
         }
       /> */}
 
-      {/* Qualquer rota desconhecida → vai pra raiz (que é protegida) */}
+      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
 export default App;
-
