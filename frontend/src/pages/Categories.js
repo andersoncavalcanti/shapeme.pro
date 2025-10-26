@@ -189,7 +189,7 @@ const Categories = () => {
           {t('categories.refresh', '🔄 Atualizar Lista')}
         </button>
 
-        {/* 🔒 Usa navigate para evitar qualquer interceptação do Link */}
+        {/* CTA principal: usa navigate() para blindar a navegação */}
         <button
           onClick={() => {
             console.log('[Categories] indo para /categories/new');
@@ -299,7 +299,7 @@ const Categories = () => {
       <div
         style={{
           backgroundColor: '#e8f5e8',
-          border: '1px solid '#2E8B57',
+          border: '1px solid #2E8B57',
           borderRadius: '8px',
           padding: '2rem',
           textAlign: 'center',
@@ -349,3 +349,4 @@ const Categories = () => {
 };
 
 export default Categories;
+
