@@ -1,24 +1,21 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-// ✅ Usa o ProtectedRoute que você já colocou em components/common
 import ProtectedRoute from './components/common/ProtectedRoute';
-
-// ✅ Usa seu Layout real (onde fica o header/botão de idioma)
 import Layout from './components/common/Layout';
 
-// ✅ Suas páginas existentes (ajuste se o nome/caminho for outro)
 import Login from './pages/Login';
 import Recipes from './pages/Recipes';
 import Categories from './pages/Categories';
+import CategoryCreate from './pages/CategoryCreate';
 
-// 🔹 Helper para renderizar uma página dentro do Layout
+// Helper para renderizar dentro do Layout (mantém header + i18n)
 const WithLayout = ({ children }) => <Layout>{children}</Layout>;
 
 function App() {
   return (
     <Routes>
-      {/* Login também com Layout para manter o cabeçalho e o botão de idioma */}
+      {/* Login com Layout para manter o botão de idioma */}
       <Route
         path="/login"
         element={
@@ -28,7 +25,7 @@ function App() {
         }
       />
 
-      {/* Página inicial real do sistema (ajuste para sua Home, se tiver) */}
+      {/* Página inicial real (ajuste se quiser outra) */}
       <Route
         path="/"
         element={
@@ -40,18 +37,7 @@ function App() {
         }
       />
 
-      {/* Outras rotas protegidas do app */}
-      <Route
-        path="/recipes"
-        element={
-          <ProtectedRoute>
-            <WithLayout>
-              <Recipes />
-            </WithLayout>
-          </ProtectedRoute>
-        }
-      />
-
+      {/* Categorias */}
       <Route
         path="/categories"
         element={
@@ -63,22 +49,36 @@ function App() {
         }
       />
 
+      {/* Nova categoria */}
       <Route
         path="/categories/new"
         element={
           <ProtectedRoute>
             <WithLayout>
-              <CategoryCreate /> {/* sua página de criação */}
+              <CategoryCreate />
             </WithLayout>
           </ProtectedRoute>
         }
       />
 
-      {/* Qualquer rota desconhecida → raiz */}
+      {/* Exemplo de receitas (caso acesse diretamente) */}
+      <Route
+        path="/recipes"
+        element={
+          <ProtectedRoute>
+            <WithLayout>
+              <Recipes />
+            </WithLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
 export default App;
+
 
