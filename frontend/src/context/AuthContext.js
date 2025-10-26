@@ -10,6 +10,7 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Restaura token do localStorage (se houver) e busca usuário
     const token = localStorage.getItem('token');
     if (token) {
       api.setAuthHeader(`Bearer ${token}`);
@@ -17,24 +18,27 @@ export const AuthProvider = ({ children }) => {
     } else {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchUser = async () => {
     try {
-      const response = await api.get('/api/users/me');
-      setUser(response);
+      const me = await api.get('/api/users/me');
+      setUser(me);
     } catch (error) {
+      // Token inválido/expirado → limpa e segue para login
       console.error('Erro ao buscar usuário:', error);
       localStorage.removeItem('token');
       api.setAuthHeader(null);
+      setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
   const login = async (email, password) => {
-  try {
-    const response = await api.post(
+    // Faz login no backend (FastAPI espera x-www-form-urlencoded)
+    const tokenResp = await api.post(
       '/api/auth/token',
       new URLSearchParams({
         username: email,
@@ -43,21 +47,18 @@ export const AuthProvider = ({ children }) => {
       { 'Content-Type': 'application/x-www-form-urlencoded' }
     );
 
-    if (response.access_token) {
-      localStorage.setItem('token', response.access_token);
-      api.setAuthHeader(`Bearer ${response.access_token}`);  // Certificando-se de que o header seja enviado corretamente
-      await fetchUser();  // Após o login, tenta buscar o usuário
-      navigate('/');
-    } else {
+    if (!tokenResp || !tokenResp.access_token) {
       throw new Error('Token não recebido');
     }
-  } catch (error) {
-    console.error('Erro de login:', error);
-    setError('E-mail ou senha inválidos.');
-    throw error;
-  }
-};
 
+    // Persiste token e configura Authorization para as próximas requests
+    localStorage.setItem('token', tokenResp.access_token);
+    api.setAuthHeader(`Bearer ${tokenResp.access_token}`);
+
+    // Atualiza estado do usuário e navega
+    await fetchUser();
+    navigate('/');
+  };
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -74,4 +75,3 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
-
