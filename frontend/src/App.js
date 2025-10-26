@@ -2,20 +2,23 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 import ProtectedRoute from './components/common/ProtectedRoute';
+import AdminRoute from './components/common/AdminRoute';
 import Layout from './components/common/Layout';
 
 import Login from './pages/Login';
 import Recipes from './pages/Recipes';
 import Categories from './pages/Categories';
 import CategoryCreate from './pages/CategoryCreate';
+import RecipeView from './pages/RecipeView';
+import RecipeForm from './pages/RecipeForm';
 
-// Helper para renderizar dentro do Layout (mantém header + i18n)
+// Helper para manter header/i18n
 const WithLayout = ({ children }) => <Layout>{children}</Layout>;
 
 function App() {
   return (
     <Routes>
-      {/* Login com Layout para manter o botão de idioma */}
+      {/* Login com Layout para manter idioma */}
       <Route
         path="/login"
         element={
@@ -25,7 +28,7 @@ function App() {
         }
       />
 
-      {/* Página inicial real (ajuste se quiser outra) */}
+      {/* Página inicial (ajuste se preferir outra) */}
       <Route
         path="/"
         element={
@@ -34,6 +37,52 @@ function App() {
               <Recipes />
             </WithLayout>
           </ProtectedRoute>
+        }
+      />
+
+      {/* Receitas (lista) */}
+      <Route
+        path="/recipes"
+        element={
+          <ProtectedRoute>
+            <WithLayout>
+              <Recipes />
+            </WithLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* 🔓 Ler receita — pública */}
+      <Route
+        path="/recipes/:id"
+        element={
+          <WithLayout>
+            <RecipeView />
+          </WithLayout>
+        }
+      />
+
+      {/* 🔒 Admin — nova receita */}
+      <Route
+        path="/recipes/new"
+        element={
+          <AdminRoute>
+            <WithLayout>
+              <RecipeForm />
+            </WithLayout>
+          </AdminRoute>
+        }
+      />
+
+      {/* 🔒 Admin — editar receita */}
+      <Route
+        path="/recipes/:id/edit"
+        element={
+          <AdminRoute>
+            <WithLayout>
+              <RecipeForm />
+            </WithLayout>
+          </AdminRoute>
         }
       />
 
@@ -56,18 +105,6 @@ function App() {
           <ProtectedRoute>
             <WithLayout>
               <CategoryCreate />
-            </WithLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Exemplo de receitas (caso acesse diretamente) */}
-      <Route
-        path="/recipes"
-        element={
-          <ProtectedRoute>
-            <WithLayout>
-              <Recipes />
             </WithLayout>
           </ProtectedRoute>
         }
