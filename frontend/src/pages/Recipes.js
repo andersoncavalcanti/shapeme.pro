@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 const Recipes = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuth(); // para saber se é admin
+  const { user } = useAuth();
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
@@ -22,7 +22,6 @@ const Recipes = () => {
       setLoading(true);
       setErr('');
       const resp = await apiService.getRecipes();
-      // aceita array direto ou objeto com "recipes"
       const list = Array.isArray(resp) ? resp : (resp?.recipes || []);
       setRecipes(list);
     } catch (e) {
@@ -34,17 +33,16 @@ const Recipes = () => {
   };
 
   const titleFor = (r) => {
-    const lang = i18n.language;
+    const lang = i18n.language || 'pt';
     return (
-      r[`name_${lang}`] ||
       r[`title_${lang}`] ||
-      r.name ||
-      r.title ||
+      r.title_pt ||
+      r.title_en ||
+      r.title_es ||
       t('recipes.untitled', 'Sem título')
     );
   };
 
-  // ---- estilos simples (inline) para manter consistência com o restante) ----
   const container = { maxWidth: '1200px', margin: '0 auto', padding: '2rem' };
   const header = { textAlign: 'center', marginBottom: '2rem' };
   const h1 = { fontSize: '2rem', color: '#2E8B57', fontWeight: 'bold' };
@@ -110,7 +108,6 @@ const Recipes = () => {
           {t('recipes.refresh', '🔄 Atualizar Lista')}
         </button>
 
-        {/* Botão de Nova Receita → apenas para admin */}
         {user?.is_admin && (
           <button
             style={btnSecondary}
@@ -138,29 +135,20 @@ const Recipes = () => {
         <div style={grid}>
           {recipes.map((r) => (
             <div key={r.id} style={card}>
-              {/* Título clicável → leitura pública */}
               <Link to={`/recipes/${r.id}`} style={titleLink}>
                 {titleFor(r)}
               </Link>
 
-              {/* metadados simples */}
               <div style={meta}>
-                {r.category_id ? (
-                  <span>
-                    {t('recipes.category', 'Categoria')}: {r.category_id}
-                  </span>
-                ) : (
-                  <span>{t('recipes.noCategory', 'Sem categoria')}</span>
-                )}
+                {r.prep_time_minutes
+                  ? `${t('recipes.prep', 'Preparo')}: ${r.prep_time_minutes} ${t('recipe.minutes', 'min')}`
+                  : t('recipe.na', 'N/A')}
               </div>
 
-              {/* Ações do item */}
               <div style={itemActions}>
                 <Link to={`/recipes/${r.id}`} style={btn}>
                   {t('recipes.view', '👁️ Ver')}
                 </Link>
-
-                {/* Editar apenas para admin */}
                 {user?.is_admin && (
                   <button
                     style={btnSecondary}

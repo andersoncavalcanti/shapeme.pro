@@ -4,49 +4,81 @@ import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 
 const RecipeForm = () => {
-  const { id } = useParams(); // se existir → edição
+  const { id } = useParams(); // edição quando existe
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const { t } = useTranslation();
 
   const [form, setForm] = useState({
-    name_pt: '',
-    name_en: '',
-    name_es: '',
-    description: '',
-    ingredients: '',
-    steps: '',
+    title_pt: '',
+    title_en: '',
+    title_es: '',
+    description_pt: '',
+    description_en: '',
+    description_es: '',
+    image_url: '',
+    difficulty: 1,
+    prep_time_minutes: '',
     category_id: '',
   });
+  const [categories, setCategories] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState('');
 
   useEffect(() => {
-    const load = async () => {
-      if (!isEdit) return;
+    // carrega categorias para o select
+    const loadCategories = async () => {
+      try {
+        const resp = await apiService.getCategories();
+        const list = Array.isArray(resp) ? resp : (resp?.categories || []);
+        setCategories(list);
+      } catch (e) {
+        console.error('Erro ao carregar categorias:', e);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    if (!isEdit) return;
+    // carrega receita para edição
+    const loadRecipe = async () => {
       try {
         setErr('');
         const data = await apiService.getRecipe(id);
-        // mapeia campos existentes para o form; ajuste se seus nomes forem diferentes
+        const r = Array.isArray(data) ? data[0] : data;
+
         setForm({
-          name_pt: data.name_pt || data.title_pt || '',
-          name_en: data.name_en || data.title_en || '',
-          name_es: data.name_es || data.title_es || '',
-          description: data.description || '',
-          ingredients: data.ingredients || '',
-          steps: data.steps || '',
-          category_id: data.category_id || '',
+          title_pt: r.title_pt || '',
+          title_en: r.title_en || '',
+          title_es: r.title_es || '',
+          description_pt: r.description_pt || '',
+          description_en: r.description_en || '',
+          description_es: r.description_es || '',
+          image_url: r.image_url || '',
+          difficulty: r.difficulty ?? 1,
+          prep_time_minutes: r.prep_time_minutes ?? '',
+          category_id: r.category_id ?? '',
         });
       } catch (e) {
-        console.error('Erro ao carregar receita:', e);
+        console.error('Erro ao carregar receita para edição:', e);
         setErr(t('recipe.editLoadError', 'Não foi possível carregar a receita para edição.'));
       }
     };
-    load();
-  }, [isEdit, id, t]);
+    loadRecipe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, id]);
 
   const onChange = (e) => {
     const { name, value } = e.target;
+    // numeric fields
+    if (name === 'difficulty') {
+      return setForm((prev) => ({ ...prev, difficulty: Number(value) }));
+    }
+    if (name === 'prep_time_minutes' || name === 'category_id') {
+      const v = value === '' ? '' : Number(value);
+      return setForm((prev) => ({ ...prev, [name]: v }));
+    }
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -57,13 +89,17 @@ const RecipeForm = () => {
 
     try {
       const payload = {
-        name_pt: form.name_pt.trim(),
-        name_en: form.name_en.trim(),
-        name_es: form.name_es.trim(),
-        description: form.description,
-        ingredients: form.ingredients,
-        steps: form.steps,
-        category_id: form.category_id ? Number(form.category_id) : undefined,
+        title_pt: form.title_pt.trim(),
+        title_en: form.title_en.trim(),
+        title_es: form.title_es.trim(),
+        description_pt: form.description_pt.trim(),
+        description_en: form.description_en.trim(),
+        description_es: form.description_es.trim(),
+        image_url: form.image_url.trim() || null,
+        difficulty: Number(form.difficulty) || 1,
+        prep_time_minutes:
+          form.prep_time_minutes === '' ? null : Number(form.prep_time_minutes),
+        category_id: form.category_id === '' ? null : Number(form.category_id),
       };
 
       if (isEdit) {
@@ -96,11 +132,14 @@ const RecipeForm = () => {
       )}
 
       <form onSubmit={onSubmit} className="space-y-4">
+        {/* Títulos */}
         <div>
-          <label className="font-medium block mb-1">{t('recipe.namePt', 'Nome (Português)')}</label>
+          <label className="font-medium block mb-1">
+            {t('recipe.titlePt', 'Título (Português)')}
+          </label>
           <input
-            name="name_pt"
-            value={form.name_pt}
+            name="title_pt"
+            value={form.title_pt}
             onChange={onChange}
             className="w-full border rounded p-2"
             required
@@ -108,10 +147,12 @@ const RecipeForm = () => {
         </div>
 
         <div>
-          <label className="font-medium block mb-1">{t('recipe.nameEn', 'Nome (Inglês)')}</label>
+          <label className="font-medium block mb-1">
+            {t('recipe.titleEn', 'Título (Inglês)')}
+          </label>
           <input
-            name="name_en"
-            value={form.name_en}
+            name="title_en"
+            value={form.title_en}
             onChange={onChange}
             className="w-full border rounded p-2"
             required
@@ -119,61 +160,124 @@ const RecipeForm = () => {
         </div>
 
         <div>
-          <label className="font-medium block mb-1">{t('recipe.nameEs', 'Nome (Espanhol)')}</label>
+          <label className="font-medium block mb-1">
+            {t('recipe.titleEs', 'Título (Espanhol)')}
+          </label>
           <input
-            name="name_es"
-            value={form.name_es}
+            name="title_es"
+            value={form.title_es}
             onChange={onChange}
             className="w-full border rounded p-2"
             required
           />
         </div>
 
+        {/* Descrições */}
         <div>
-          <label className="font-medium block mb-1">{t('recipe.description', 'Descrição')}</label>
+          <label className="font-medium block mb-1">
+            {t('recipe.descriptionPt', 'Descrição (Português)')}
+          </label>
           <textarea
-            name="description"
-            value={form.description}
+            name="description_pt"
+            value={form.description_pt}
             onChange={onChange}
             className="w-full border rounded p-2"
             rows={3}
+            required
           />
         </div>
 
         <div>
-          <label className="font-medium block mb-1">{t('recipe.ingredients', 'Ingredientes')}</label>
+          <label className="font-medium block mb-1">
+            {t('recipe.descriptionEn', 'Descrição (Inglês)')}
+          </label>
           <textarea
-            name="ingredients"
-            value={form.ingredients}
+            name="description_en"
+            value={form.description_en}
             onChange={onChange}
             className="w-full border rounded p-2"
-            rows={4}
-            placeholder={t('recipe.ingredientsPlaceholder', '1 xícara de...\n2 colheres de...')}
+            rows={3}
+            required
           />
         </div>
 
         <div>
-          <label className="font-medium block mb-1">{t('recipe.steps', 'Modo de preparo')}</label>
+          <label className="font-medium block mb-1">
+            {t('recipe.descriptionEs', 'Descrição (Espanhol)')}
+          </label>
           <textarea
-            name="steps"
-            value={form.steps}
+            name="description_es"
+            value={form.description_es}
             onChange={onChange}
             className="w-full border rounded p-2"
-            rows={5}
-            placeholder={t('recipe.stepsPlaceholder', 'Passo 1...\nPasso 2...')}
+            rows={3}
+            required
           />
         </div>
 
+        {/* Imagem */}
         <div>
-          <label className="font-medium block mb-1">{t('recipe.category', 'Categoria (ID)')}</label>
+          <label className="font-medium block mb-1">{t('recipe.image', 'URL da Imagem')}</label>
           <input
+            name="image_url"
+            value={form.image_url}
+            onChange={onChange}
+            className="w-full border rounded p-2"
+            placeholder="https://..."
+          />
+        </div>
+
+        {/* Dificuldade e tempo */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="font-medium block mb-1">{t('recipe.difficulty', 'Dificuldade (1–5)')}</label>
+            <select
+              name="difficulty"
+              value={form.difficulty}
+              onChange={onChange}
+              className="w-full border rounded p-2"
+            >
+              {[1, 2, 3, 4, 5].map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="font-medium block mb-1">
+              {t('recipe.prepTime', 'Tempo de Preparo (min)')}
+            </label>
+            <input
+              name="prep_time_minutes"
+              type="number"
+              min="0"
+              value={form.prep_time_minutes}
+              onChange={onChange}
+              className="w-full border rounded p-2"
+              placeholder="ex.: 45"
+            />
+          </div>
+        </div>
+
+        {/* Categoria (select) */}
+        <div>
+          <label className="font-medium block mb-1">{t('recipe.category', 'Categoria')}</label>
+          <select
             name="category_id"
             value={form.category_id}
             onChange={onChange}
             className="w-full border rounded p-2"
-            type="number"
-            min="1"
-          />
+            required
+          >
+            <option value="">{t('recipe.selectCategory', 'Selecione uma categoria')}</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {/* mostra em pt/en/es na ordem de preferência */}
+                {c.name_pt || c.name_en || c.name_es || `#${c.id}`}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="pt-2 flex gap-2">
@@ -198,3 +302,4 @@ const RecipeForm = () => {
 };
 
 export default RecipeForm;
+
