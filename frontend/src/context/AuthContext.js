@@ -33,32 +33,31 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password) => {
-    try {
-      console.log('API object:', api);
-      console.log('Available methods:', Object.keys(api));
-      
-      const response = await api.post(
-        '/api/auth/token',
-        new URLSearchParams({
-          username: email,
-          password: password,
-        }),
-        { 'Content-Type': 'application/x-www-form-urlencoded' }
-      );
+  try {
+    const response = await api.post(
+      '/api/auth/token',
+      new URLSearchParams({
+        username: email,
+        password: password,
+      }),
+      { 'Content-Type': 'application/x-www-form-urlencoded' }
+    );
 
-      if (response.access_token) {
-        localStorage.setItem('token', response.access_token);
-        api.setAuthHeader(`Bearer ${response.access_token}`);
-        await fetchUser();
-        navigate('/');
-      } else {
-        throw new Error('Token não recebido');
-      }
-    } catch (error) {
-      console.error('Erro de login:', error);
-      throw error;
+    if (response.access_token) {
+      localStorage.setItem('token', response.access_token);
+      api.setAuthHeader(`Bearer ${response.access_token}`);  // Certificando-se de que o header seja enviado corretamente
+      await fetchUser();  // Após o login, tenta buscar o usuário
+      navigate('/');
+    } else {
+      throw new Error('Token não recebido');
     }
-  };
+  } catch (error) {
+    console.error('Erro de login:', error);
+    setError('E-mail ou senha inválidos.');
+    throw error;
+  }
+};
+
 
   const logout = () => {
     localStorage.removeItem('token');
