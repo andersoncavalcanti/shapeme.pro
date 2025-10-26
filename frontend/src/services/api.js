@@ -8,6 +8,7 @@ class ApiService {
     };
   }
 
+  // Define/limpa Authorization: 'Bearer <token>'
   setAuthHeader(token) {
     if (token) {
       this.headers['Authorization'] = token;
@@ -16,6 +17,7 @@ class ApiService {
     }
   }
 
+  // Método base (merge de headers seguro)
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
     const { headers: optHeaders = {}, ...rest } = options;
@@ -28,19 +30,6 @@ class ApiService {
       },
     };
 
-    // 🔎 DEBUG: logar cada chamada antes de enviar
-    console.log('[API] Request:', {
-      url,
-      method: config.method || 'GET',
-      headers: config.headers,
-      bodyPreview:
-        config.body instanceof URLSearchParams
-          ? config.body.toString()
-          : typeof config.body === 'string'
-          ? config.body.slice(0, 200)
-          : config.body,
-    });
-
     try {
       const response = await fetch(url, config);
 
@@ -50,16 +39,12 @@ class ApiService {
           const errorData = await response.json();
           detail = errorData?.detail || detail;
         } catch (_) {}
-        console.error('[API] Error response:', detail);
         throw new Error(detail);
       }
 
       try {
-        const json = await response.json();
-        console.log('[API] Response OK:', { url, jsonPreview: json });
-        return json;
+        return await response.json();
       } catch {
-        console.log('[API] Response OK (no JSON):', url);
         return null;
       }
     } catch (error) {
@@ -68,6 +53,7 @@ class ApiService {
     }
   }
 
+  // --------- Helpers axios-like ---------
   async get(endpoint, headers = {}) {
     return this.request(endpoint, { method: 'GET', headers });
   }
@@ -75,6 +61,7 @@ class ApiService {
   async post(endpoint, body, headers = {}) {
     let finalBody = body;
 
+    // Objeto simples -> JSON
     if (
       !(body instanceof FormData) &&
       !(body instanceof URLSearchParams) &&
@@ -103,21 +90,79 @@ class ApiService {
     return this.request(endpoint, { method: 'DELETE', headers });
   }
 
-  // Endpoints do app
-  async healthCheck() { return this.request('/api/health'); }
-  async getRecipes() { return this.request('/api/recipes'); }
+  // --------- Endpoints já usados no app ---------
+
+  // Health
+  async healthCheck() {
+    return this.request('/api/health');
+  }
+
+  // Stats
+  async getStats() {
+    return this.request('/api/stats');
+  }
+
+  // Recipes
+  async getRecipes() {
+    return this.request('/api/recipes');
+  }
+
+  async getRecipe(recipeId) {
+    return this.request(`/api/recipes/${recipeId}`);
+  }
+
   async createRecipe(recipeData) {
-    return this.request('/api/recipes', { method: 'POST', body: JSON.stringify(recipeData) });
+    return this.request('/api/recipes', {
+      method: 'POST',
+      body: JSON.stringify(recipeData),
+    });
   }
+
   async updateRecipe(recipeId, recipeData) {
-    return this.request(`/api/recipes/${recipeId}`, { method: 'PUT', body: JSON.stringify(recipeData) });
+    return this.request(`/api/recipes/${recipeId}`, {
+      method: 'PUT',
+      body: JSON.stringify(recipeData),
+    });
   }
+
   async deleteRecipe(recipeId) {
-    return this.request(`/api/recipes/${recipeId}`, { method: 'DELETE' });
+    return this.request(`/api/recipes/${recipeId}`, {
+      method: 'DELETE',
+    });
   }
-  async getStats() { return this.request('/api/stats'); }
+
+  // Categories (💥 adicionados)
+  async getCategories() {
+    return this.request('/api/categories');
+  }
+
+  async getCategory(categoryId) {
+    return this.request(`/api/categories/${categoryId}`);
+  }
+
+  async createCategory(categoryData) {
+    return this.request('/api/categories', {
+      method: 'POST',
+      body: JSON.stringify(categoryData),
+    });
+  }
+
+  async updateCategory(categoryId, categoryData) {
+    return this.request(`/api/categories/${categoryId}`, {
+      method: 'PUT',
+      body: JSON.stringify(categoryData),
+    });
+  }
+
+  async deleteCategory(categoryId) {
+    return this.request(`/api/categories/${categoryId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
+// Exportações
 const apiService = new ApiService();
 export default apiService;
 export { apiService };
+
