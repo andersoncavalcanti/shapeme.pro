@@ -4,37 +4,28 @@ import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 
 const Home = () => {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
+  const isAdmin = !!user?.is_admin;
+  const { t } = useTranslation();
 
-  const [apiStatus, setApiStatus] = useState('checking');
-  const [stats, setStats] = useState({
-    categories: 0,
-    recipes: 0
-  });
+  const [apiStatus, setApiStatus] = useState('checking'); // checking | connected | error
+  const [stats, setStats] = useState({ categories: 0, recipes: 0 });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    checkApiAndLoadStats();
-  }, []);
+  useEffect(() => { checkApiAndLoadStats(); }, []);
 
   const checkApiAndLoadStats = async () => {
     try {
       setLoading(true);
-      
-      // Verificar saúde da API
-      await apiService.health();
+      await apiService.healthCheck();
       setApiStatus('connected');
-      
-      // Carregar estatísticas
-      const statsResponse = await apiService.getStats();
-      
+      const s = await apiService.getStats();
       setStats({
-        categories: statsResponse.total_categories || 0,
-        recipes: statsResponse.total_recipes || 0
+        categories: s.total_categories || 0,
+        recipes: s.total_recipes || 0,
       });
-      
-    } catch (error) {
-      console.error('Error loading data:', error);
+    } catch (e) {
+      console.error('Error loading data:', e);
       setApiStatus('error');
       setStats({ categories: 0, recipes: 0 });
     } finally {
@@ -42,124 +33,67 @@ const Home = () => {
     }
   };
 
-  const containerStyle = {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '2rem',
-  };
-
-  const heroStyle = {
-    background: 'linear-gradient(135deg, #2E8B57 0%, #3CB371 100%)',
-    color: 'white',
-    padding: '4rem 2rem',
-    borderRadius: '16px',
-    textAlign: 'center',
-    marginBottom: '3rem',
-    boxShadow: '0 10px 30px rgba(46, 139, 87, 0.3)',
-  };
-
-  const titleStyle = {
-    fontSize: '3.5rem',
-    fontWeight: 'bold',
-    marginBottom: '1rem',
-    textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
-  };
-
-  const subtitleStyle = {
-    fontSize: '1.3rem',
-    marginBottom: '2rem',
-    opacity: 0.9,
-  };
-
+  // --- styles (inline para manter seu layout atual) ---
+  const containerStyle = { maxWidth: '1200px', margin: '0 auto', padding: '2rem' };
+  const titleStyle = { fontSize: '2.5rem', color: '#2E8B57', marginBottom: '0.5rem' };
+  const subtitleStyle = { fontSize: '1.3rem', marginBottom: '2rem', opacity: 0.9 };
   const statusCardStyle = {
-    backgroundColor: 'white',
-    padding: '1.5rem',
-    borderRadius: '12px',
-    marginBottom: '2rem',
-    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-    border: `2px solid ${apiStatus === 'connected' ? '#28a745' : apiStatus === 'error' ? '#dc3545' : '#ffc107'}`,
+    backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px',
+    marginBottom: '2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+    border: `2px solid ${apiStatus === 'connected' ? '#28a745' : apiStatus === 'error' ? '#dc3545' : '#ffc107'}`
   };
-
-  const actionsGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '2rem',
-    marginBottom: '3rem',
-  };
-
-  const actionCardStyle = {
-    backgroundColor: 'white',
-    padding: '2rem',
-    borderRadius: '12px',
-    textAlign: 'center',
-    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-    transition: 'transform 0.3s, box-shadow 0.3s',
-    cursor: 'pointer',
-    border: '2px solid transparent',
-  };
-
   const statsGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '1.5rem',
-    marginTop: '2rem',
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: '1rem', marginTop: '1rem'
   };
-
   const statCardStyle = {
-    backgroundColor: 'white',
-    padding: '1.5rem',
-    borderRadius: '8px',
-    textAlign: 'center',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    backgroundColor: '#f8f9fa', padding: '1rem', borderRadius: '10px', textAlign: 'center',
+    border: '1px solid #e9ecef'
   };
-
+  const actionsGridStyle = {
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    gap: '2rem', marginBottom: '3rem',
+  };
+  const actionCardStyle = {
+    backgroundColor: 'white', padding: '2rem', borderRadius: '12px', textAlign: 'center',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.1)', border: '2px solid transparent', cursor: 'pointer'
+  };
   const buttonStyle = {
-    backgroundColor: '#2E8B57',
-    color: 'white',
-    border: 'none',
-    padding: '1rem 2rem',
-    borderRadius: '50px',
-    fontSize: '1rem',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    transition: 'all 0.3s',
-    boxShadow: '0 4px 15px rgba(46, 139, 87, 0.3)',
-    margin: '0 0.5rem',
-    textDecoration: 'none',
-    display: 'inline-block',
+    backgroundColor: '#2E8B57', color: 'white', border: 'none', padding: '0.75rem 1.5rem',
+    borderRadius: '8px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold', display: 'inline-block'
   };
 
   const getStartedActions = [
     {
-      title: '🏷️ Ver Categorias',
-      description: 'Visualize e gerencie as categorias de receitas',
-      action: () => window.location.href = '/categories',
+      title: t('home.actions.categories'),
+      description: t('categories.listTitle', 'Visualize e gerencie as categorias de receitas'),
+      onClick: () => (window.location.href = '/categories'),
       color: '#1976d2',
-      available: true
+      available: true,
     },
     {
-      title: '🍽️ Ver Receitas',
-      description: 'Visualize todas as receitas cadastradas no sistema',
-      action: () => window.location.href = '/recipes',
+      title: t('home.actions.recipes'),
+      description: t('recipes.listTitle', 'Visualize todas as receitas cadastradas no sistema'),
+      onClick: () => (window.location.href = '/recipes'),
       color: '#2E8B57',
-      available: true
+      available: true,
     },
     {
-      title: '📚 Documentação API',
-      description: 'Acesse a documentação completa da API',
-      action: () => window.open('http://shapeme.pro/docs', '_blank'),
+      title: t('home.actions.docs'),
+      description: t('home.api_instructions'),
+      onClick: () => window.open('http://shapeme.pro/docs', '_blank'),
       color: '#f57c00',
-      available: true
-    }
+      available: true,
+    },
   ];
 
   if (isAdmin) {
     getStartedActions.push({
-      title: '👑 Admin Dashboard',
-      description: 'Gerencie usuários, categorias e receitas',
-      action: () => window.location.href = '/admin',
+      title: t('home.actions.admin'),
+      description: t('admin.desc', 'Gerencie usuários, categorias e receitas'),
+      onClick: () => (window.location.href = '/admin'),
       color: '#ffc107',
-      available: true
+      available: true,
     });
   }
 
@@ -168,7 +102,7 @@ const Home = () => {
       <div style={containerStyle}>
         <div style={{ textAlign: 'center', padding: '4rem' }}>
           <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
-          <h2>Carregando sistema...</h2>
+          <h2>{t('home.loading')}</h2>
         </div>
       </div>
     );
@@ -176,189 +110,112 @@ const Home = () => {
 
   return (
     <div style={containerStyle}>
-      {/* Hero Section */}
-      <div style={heroStyle}>
-        <h1 style={titleStyle}>🍃 ShapeMe</h1>
-        <p style={subtitleStyle}>Sistema de Cadastro de Receitas Saudáveis</p>
-        
-        <div style={{ marginTop: '2rem' }}>
-          <a
-            href="/recipes"
-            style={buttonStyle}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#236B47';
-              e.target.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#2E8B57';
-              e.target.style.transform = 'translateY(0)';
-            }}
-          >
-            🍽️ Ver Receitas
-          </a>
-          <a
-            href="/categories"
-            style={{
-              ...buttonStyle,
-              backgroundColor: '#1976d2',
-              marginLeft: '1rem'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#1565c0';
-              e.target.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#1976d2';
-              e.target.style.transform = 'translateY(0)';
-            }}
-          >
-            🏷️ Ver Categorias
-          </a>
-        </div>
-      </div>
+      <h1 style={titleStyle}>{t('home.title')}</h1>
+      <p style={subtitleStyle}>{t('home.subtitle')}</p>
 
-      {/* Status da API */}
+      {/* API status */}
       <div style={statusCardStyle}>
-        <h3 style={{ marginBottom: '1rem', color: '#343a40' }}>
-          📡 Status do Sistema
-        </h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-          <div style={{
-            width: '12px',
-            height: '12px',
-            borderRadius: '50%',
-            backgroundColor: apiStatus === 'connected' ? '#28a745' : 
-                           apiStatus === 'error' ? '#dc3545' : '#ffc107'
-          }}></div>
-          <span style={{ fontWeight: 'bold' }}>
-            {apiStatus === 'connected' ? '✅ Sistema Online' : 
-             apiStatus === 'error' ? '❌ Sistema Offline' : '⏳ Verificando...'}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <strong>API</strong>
+          <span
+            style={{
+              padding: '0.4rem 0.8rem',
+              borderRadius: '9999px',
+              color: 'white',
+              backgroundColor: apiStatus === 'connected' ? '#28a745' : apiStatus === 'error' ? '#dc3545' : '#ffc107',
+            }}
+          >
+            {apiStatus === 'connected'
+              ? t('status.api_connected')
+              : apiStatus === 'error'
+              ? t('status.api_error')
+              : t('status.loading')}
           </span>
         </div>
-        
+
         {apiStatus === 'connected' && (
           <div style={statsGridStyle}>
             <div style={statCardStyle}>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1976d2' }}>
-                {stats.categories}
-              </div>
-              <div>Categorias Cadastradas</div>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1976d2' }}>{stats.categories}</div>
+              <div>{t('categories.count', { count: stats.categories })}</div>
             </div>
             <div style={statCardStyle}>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2E8B57' }}>
-                {stats.recipes}
-              </div>
-              <div>Receitas Cadastradas</div>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2E8B57' }}>{stats.recipes}</div>
+              <div>{t('recipes.count', { count: stats.recipes })}</div>
             </div>
             <div style={statCardStyle}>
               <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f57c00' }}>
                 {stats.categories > 0 || stats.recipes > 0 ? '✅' : '🆕'}
               </div>
               <div>
-                {stats.categories > 0 || stats.recipes > 0 ? 'Sistema Ativo' : 'Sistema Limpo'}
+                {stats.categories > 0 || stats.recipes > 0 ? t('home.systemActive') : t('home.systemEmpty')}
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Ações Principais */}
-      <div>
-        <h2 style={{ 
-          textAlign: 'center', 
-          marginBottom: '2rem', 
-          color: '#2E8B57',
-          fontSize: '2rem'
-        }}>
-          🚀 Funcionalidades
-        </h2>
-        
-        <div style={actionsGridStyle}>
-          {getStartedActions.map((action, index) => (
-            <div 
-              key={index}
-              style={{
-                ...actionCardStyle,
-                borderColor: action.color,
-                opacity: action.available ? 1 : 0.6
-              }}
-              onClick={action.available ? action.action : undefined}
-              onMouseEnter={(e) => {
-                if (action.available) {
-                  e.currentTarget.style.transform = 'translateY(-5px)';
-                  e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-                  e.currentTarget.style.borderColor = action.color;
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (action.available) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-                  e.currentTarget.style.borderColor = 'transparent';
-                }
-              }}
-            >
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
-                {action.title.split(' ')[0]}
-              </div>
-              <h3 style={{ color: action.color, marginBottom: '1rem' }}>
-                {action.title}
-              </h3>
-              <p style={{ color: '#666', lineHeight: '1.6' }}>
-                {action.description}
-              </p>
-              {!action.available && (
-                <div style={{ 
-                  marginTop: '1rem', 
-                  color: '#999', 
-                  fontSize: '0.9rem' 
-                }}>
-                  Em breve...
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: '#2E8B57', fontSize: '2rem' }}>
+        {t('home.features.title')}
+      </h2>
 
-      {/* Instruções para API */}
-      <div style={{
-        backgroundColor: '#e8f5e8',
-        border: '1px solid #2E8B57',
-        borderRadius: '8px',
-        padding: '2rem',
-        textAlign: 'center',
-        marginTop: '2rem'
-      }}>
-        <h3 style={{ color: '#2E8B57', marginBottom: '1rem' }}>
-          🔧 Para Desenvolvedores
-        </h3>
-        <p style={{ color: '#2E8B57', marginBottom: '1rem' }}>
-          Use a API REST para integrar com outros sistemas ou criar suas próprias interfaces.
-        </p>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a
-            href="http://shapeme.pro/docs"
-            
-            rel="noopener noreferrer"
-            style={{
-              ...buttonStyle,
-              backgroundColor: '#f57c00'
+      <div style={actionsGridStyle}>
+        {getStartedActions.map((a, idx) => (
+          <div
+            key={idx}
+            style={{ ...actionCardStyle, borderColor: a.color, opacity: a.available ? 1 : 0.6 }}
+            onClick={a.available ? a.onClick : undefined}
+            onMouseEnter={(e) => {
+              if (a.available) {
+                e.currentTarget.style.transform = 'translateY(-5px)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                e.currentTarget.style.borderColor = a.color;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (a.available) {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+              }
             }}
           >
-            📚 Documentação API
+            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{a.title}</div>
+            <div style={{ color: '#666' }}>{a.description}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* API instructions */}
+      <div
+        style={{
+          backgroundColor: 'white',
+          padding: '2rem',
+          borderRadius: '12px',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          border: '1px solid #e9ecef',
+        }}
+      >
+        <h3 style={{ marginTop: 0 }}>📚 {t('home.actions.docs')}</h3>
+        <p style={{ color: '#555' }}>{t('home.api_instructions')}</p>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <a
+            href="http://shapeme.pro/docs"
+            target="_blank"
+            rel="noreferrer"
+            style={{ ...buttonStyle, backgroundColor: '#1976d2' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#1565c0'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#1976d2'; }}
+          >
+            📖 Swagger UI
           </a>
           <button
             onClick={() => {
               navigator.clipboard.writeText('http://shapeme.pro/api/');
-              alert('URL da API copiada!');
+              alert(t('home.api_url_copied'));
             }}
-            style={{
-              ...buttonStyle,
-              backgroundColor: '#6c757d'
-            }}
+            style={{ ...buttonStyle, backgroundColor: '#6c757d' }}
           >
-            📋 Copiar URL da API
+            {t('home.copy_api_url')}
           </button>
         </div>
       </div>

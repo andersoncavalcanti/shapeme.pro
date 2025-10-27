@@ -40,7 +40,7 @@ const Admin = () => {
   const loadData = async () => {
     try {
       // Testar API
-      await apiService.health();
+      await apiService.healthCheck();
       setStats(prev => ({ ...prev, apiStatus: 'connected' }));
 
       // Carregar dados
