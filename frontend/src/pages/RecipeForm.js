@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-// import ReactQuill from 'react-quill'; // Removido para corrigir o erro de build
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 
