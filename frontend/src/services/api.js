@@ -44,7 +44,7 @@ class ApiService {
     }
   }
 
-  // ------------- axios-like -------------
+  // ---------- axios-like ----------
   async get(endpoint, headers = {}) {
     return this.request(endpoint, { method: 'GET', headers });
   }
@@ -74,7 +74,7 @@ class ApiService {
     return this.request(endpoint, { method: 'DELETE', headers });
   }
 
-  // ------------- Endpoints -------------
+  // ---------- Endpoints ----------
   // Health / Stats
   async healthCheck() { return this.request('/api/health'); }
   async getStats() { return this.request('/api/stats'); }
@@ -82,7 +82,7 @@ class ApiService {
   // Categories
   async getCategories() {
     const data = await this.request('/api/categories');
-    return unwrap(data, 'categories'); // retorna array
+    return unwrap(data, 'categories');
   }
   async deleteCategory(categoryId) {
     return this.request(`/api/categories/${categoryId}`, { method: 'DELETE' });
@@ -91,23 +91,25 @@ class ApiService {
   // Recipes
   async getRecipes() {
     const data = await this.request('/api/recipes');
-    return unwrap(data, 'recipes'); // array
+    return unwrap(data, 'recipes');
   }
+
+  async getRecipesByCategory(categoryId) {
+    // tenta endpoint com query param; se o backend não suportar e retornar 404/400,
+    // o catch cai lá em cima. Em último caso, o chamador pode filtrar client-side.
+    const data = await this.request(`/api/recipes?category_id=${encodeURIComponent(categoryId)}`);
+    return unwrap(data, 'recipes');
+  }
+
   async getRecipe(id) {
     const data = await this.request(`/api/recipes/${id}`);
-    return unwrap(data, 'recipe'); // objeto
+    return unwrap(data, 'recipe');
   }
   async createRecipe(recipeData) {
-    return this.request('/api/recipes', {
-      method: 'POST',
-      body: JSON.stringify(recipeData),
-    });
+    return this.request('/api/recipes', { method: 'POST', body: JSON.stringify(recipeData) });
   }
   async updateRecipe(recipeId, recipeData) {
-    return this.request(`/api/recipes/${recipeId}`, {
-      method: 'PUT',
-      body: JSON.stringify(recipeData),
-    });
+    return this.request(`/api/recipes/${recipeId}`, { method: 'PUT', body: JSON.stringify(recipeData) });
   }
   async deleteRecipe(recipeId) {
     return this.request(`/api/recipes/${recipeId}`, { method: 'DELETE' });
