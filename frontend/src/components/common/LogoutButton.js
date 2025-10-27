@@ -9,22 +9,22 @@ const LogoutButton = () => {
   if (!user) return null;
 
   const handleLogout = () => {
-    logout();        // limpa token/usuário
+    logout();
     navigate('/login');
   };
 
-  // Botão flutuante no canto inferior direito (não mexe no topo)
+  // Botão flutuante no canto SUPERIOR direito (sem tocar no header)
   return (
     <button
       onClick={handleLogout}
       style={{
         position: 'fixed',
+        top: '1rem',
         right: '1rem',
-        bottom: '1rem',
-        zIndex: 50,
+        zIndex: 1000,
         backgroundColor: '#ef4444',
         color: '#fff',
-        padding: '0.65rem 1rem',
+        padding: '0.6rem 1rem',
         borderRadius: '9999px',
         fontWeight: 600,
         boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
@@ -41,3 +41,4 @@ const LogoutButton = () => {
 };
 
 export default LogoutButton;
+
