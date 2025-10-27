@@ -8,7 +8,7 @@ const unwrap = (data, key) => {
   return data;
 };
 
-// Limite máximo de upload em MB
+// Limite máximo de upload em MB (deixe alinhado com o Nginx)
 const DEFAULT_MAX_MB = 10;
 
 class ApiService {
@@ -32,14 +32,15 @@ class ApiService {
     if (!res.ok) {
       let detail = `HTTP error! status: ${res.status}`;
       try {
-        const errorData = await res.json();
-        detail = errorData?.detail ?? detail;
-      } catch {
-        try {
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const errorData = await res.json();
+          detail = errorData?.detail ?? detail;
+        } else {
           const txt = await res.text();
           if (txt) detail = txt;
-        } catch {}
-      }
+        }
+      } catch {}
       throw new Error(detail);
     }
     try {
@@ -82,7 +83,7 @@ class ApiService {
   // ---------- Uploads / Imagens ----------
   async uploadImage(file, opts = { maxMB: DEFAULT_MAX_MB }) {
     // validações locais
-    if (!file.type.startsWith('image/')) {
+    if (!file?.type?.startsWith('image/')) {
       throw new Error('Formato inválido. Envie uma imagem (JPEG, PNG, WEBP...).');
     }
     const maxBytes = (opts.maxMB ?? DEFAULT_MAX_MB) * 1024 * 1024;
@@ -98,19 +99,24 @@ class ApiService {
       body: formData,
     });
 
-    if (res.status === 413) {
-      throw new Error('Arquivo muito grande (erro 413). Tente um arquivo menor.');
-    }
     if (!res.ok) {
-      // Extrai a melhor mensagem possível
-      try {
-        const data = await res.json();
-        const msg = data?.detail || JSON.stringify(data);
-        throw new Error(msg);
-      } catch {
-        const txt = await res.text();
-        throw new Error(txt || 'Falha no upload');
+      // 413 vem do Nginx quando excede client_max_body_size
+      if (res.status === 413) {
+        throw new Error('Arquivo muito grande (erro 413). Tente um arquivo menor.');
       }
+      // lê o corpo APENAS UMA VEZ (JSON se possível, senão texto)
+      let message = `HTTP error! status: ${res.status}`;
+      try {
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const data = await res.json();
+          message = data?.detail || JSON.stringify(data);
+        } else {
+          const txt = await res.text();
+          if (txt) message = txt;
+        }
+      } catch {}
+      throw new Error(message);
     }
 
     return await res.json(); // { public_id, thumbnail_url, medium_url, large_url }
@@ -182,4 +188,5 @@ class ApiService {
 const apiService = new ApiService();
 export default apiService;
 export { apiService };
+
 
