@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import ReactQuill from 'react-quill';
-
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
+
+// Usamos React.lazy e useMemo para importação dinâmica,
+// o que pode contornar problemas de resolução de módulo em alguns ambientes de build.
+const ReactQuill = React.lazy(() => import('react-quill'));
 
 const MAX_MB = 10; // mesmo limite que o backend/Nginx aceitam
 
@@ -141,7 +143,7 @@ const RecipeForm = () => {
     }
   };
 
-  const modules = {
+  const modules = useMemo(() => ({
     toolbar: [
       [{ 'header': [1, 2, false] }],
       ['bold', 'italic', 'underline', 'strike', 'blockquote'],
@@ -149,14 +151,14 @@ const RecipeForm = () => {
       ['link'],
       ['clean']
     ],
-  };
+  }), []);
 
-  const formats = [
+  const formats = useMemo(() => ([
     'header',
     'bold', 'italic', 'underline', 'strike', 'blockquote',
     'list', 'bullet',
     'link'
-  ];
+  ]), []);
 
   return (
     <div className="max-w-4xl mx-auto p-6 form-container">
@@ -190,45 +192,47 @@ const RecipeForm = () => {
 
         {/* Descrições - Rich Text Editor */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="form-label">{t('recipe.descriptionPt')}</label>
-            <div className="quill-editor-container">
-              <ReactQuill
-                theme="snow"
-                value={form.description_pt}
-                onChange={(content) => onDescriptionChange('pt', content)}
-                modules={modules}
-                formats={formats}
-                className="bg-gray-800 text-white"
-              />
+          <React.Suspense fallback={<div>Carregando Editor...</div>}>
+            <div>
+              <label className="form-label">{t('recipe.descriptionPt')}</label>
+              <div className="quill-editor-container">
+                <ReactQuill
+                  theme="snow"
+                  value={form.description_pt}
+                  onChange={(content) => onDescriptionChange('pt', content)}
+                  modules={modules}
+                  formats={formats}
+                  className="bg-gray-800 text-white"
+                />
+              </div>
             </div>
-          </div>
-          <div>
-            <label className="form-label">{t('recipe.descriptionEn')}</label>
-            <div className="quill-editor-container">
-              <ReactQuill
-                theme="snow"
-                value={form.description_en}
-                onChange={(content) => onDescriptionChange('en', content)}
-                modules={modules}
-                formats={formats}
-                className="bg-gray-800 text-white"
-              />
+            <div>
+              <label className="form-label">{t('recipe.descriptionEn')}</label>
+              <div className="quill-editor-container">
+                <ReactQuill
+                  theme="snow"
+                  value={form.description_en}
+                  onChange={(content) => onDescriptionChange('en', content)}
+                  modules={modules}
+                  formats={formats}
+                  className="bg-gray-800 text-white"
+                />
+              </div>
             </div>
-          </div>
-          <div>
-            <label className="form-label">{t('recipe.descriptionEs')}</label>
-            <div className="quill-editor-container">
-              <ReactQuill
-                theme="snow"
-                value={form.description_es}
-                onChange={(content) => onDescriptionChange('es', content)}
-                modules={modules}
-                formats={formats}
-                className="bg-gray-800 text-white"
-              />
+            <div>
+              <label className="form-label">{t('recipe.descriptionEs')}</label>
+              <div className="quill-editor-container">
+                <ReactQuill
+                  theme="snow"
+                  value={form.description_es}
+                  onChange={(content) => onDescriptionChange('es', content)}
+                  modules={modules}
+                  formats={formats}
+                  className="bg-gray-800 text-white"
+                />
+              </div>
             </div>
-          </div>
+          </React.Suspense>
         </div>
 
         {/* Upload de imagem - Corrigido */}
