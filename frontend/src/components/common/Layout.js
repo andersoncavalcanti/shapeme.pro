@@ -1,76 +1,137 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';  // ✅ Import do contexto
 
 const Layout = ({ children }) => {
   const { t, i18n } = useTranslation();
-  const { user } = useAuth();
+  const { user } = useAuth(); // ✅ pega o usuário logado (para saber se é admin)
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
   };
 
+  const headerStyle = {
+    backgroundColor: '#2E8B57',
+    color: 'white',
+    padding: '1rem 0',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    position: 'sticky',
+    top: 0,
+    zIndex: 1000,
+  };
+
+  const navStyle = {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0 2rem',
+    flexWrap: 'wrap',
+    gap: '1rem',
+  };
+
+  const logoStyle = {
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    textDecoration: 'none',
+    color: 'white',
+  };
+
+  const menuStyle = {
+    display: 'flex',
+    gap: '2rem',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  };
+
+  const linkStyle = {
+    color: 'white',
+    textDecoration: 'none',
+    fontWeight: '500',
+    transition: 'opacity 0.3s',
+    cursor: 'pointer',
+  };
+
+  const adminLinkStyle = {
+    ...linkStyle,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    padding: '0.5rem 1rem',
+    borderRadius: '20px',
+    fontSize: '0.9rem',
+  };
+
+  const footerStyle = {
+    backgroundColor: '#1a5d3a',
+    color: 'white',
+    textAlign: 'center',
+    padding: '2rem',
+    marginTop: '4rem',
+  };
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="navbar sticky top-0 z-10">
-        <nav className="max-w-7xl mx-auto flex justify-between items-center px-4 py-3 flex-wrap gap-4">
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <header style={headerStyle}>
+        <nav style={navStyle}>
           {/* Logo */}
-          <a href="/" className="text-2xl font-bold text-white no-underline hover:text-red-500">
+          <a href="/" style={logoStyle}>
             🍃 ShapeMe
           </a>
 
           {/* Links principais */}
-          <div className="flex gap-6 items-center flex-wrap">
-            <a href="/" className="link-item">
+          <div style={menuStyle}>
+            <a href="/" style={linkStyle}>
               🏠 {t('nav.home')}
             </a>
-            <a href="/recipes" className="link-item">
+            <a href="/recipes" style={linkStyle}>
               🍽️ {t('nav.recipes')}
             </a>
-            <a href="/categories" className="link-item">
+            <a href="/categories" style={linkStyle}>
               🏷️ {t('nav.categories')}
             </a>
 
             {/* ✅ Mostra Admin só se logado e for admin */}
             {user?.is_admin && (
-              <a href="/admin" className="admin-link-item">
+              <a href="/admin" style={adminLinkStyle}>
                 ⚙️ Admin
               </a>
             )}
           </div>
 
-          {/* Seletor de idioma e Sair */}
-          <div className="flex gap-4 items-center">
+          {/* Seletor de idioma */}
+          <div style={menuStyle}>
             <select
               value={i18n.language}
               onChange={(e) => changeLanguage(e.target.value)}
-              className="bg-surface text-white border-none p-2 rounded text-sm cursor-pointer"
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                color: 'white',
+                border: 'none',
+                padding: '0.5rem',
+                borderRadius: '4px',
+                fontSize: '0.9rem',
+              }}
             >
-              <option value="pt" className="text-black">🇧🇷 PT</option>
-              <option value="en" className="text-black">🇺🇸 EN</option>
-              <option value="es" className="text-black">🇪🇸 ES</option>
+              <option value="pt" style={{ color: 'black' }}>🇧🇷 PT</option>
+              <option value="en" style={{ color: 'black' }}>🇺🇸 EN</option>
+              <option value="es" style={{ color: 'black' }}>🇪🇸 ES</option>
             </select>
-            {user && (
-              <a href="/logout" className="btn-primary text-sm py-2 px-3">
-                🚪 {t('nav.logout')}
-              </a>
-            )}
           </div>
         </nav>
       </header>
 
       {/* Conteúdo */}
-      <main className="flex-1 p-4 max-w-7xl mx-auto w-full">{children}</main>
+      <main style={{ flex: 1 }}>{children}</main>
 
-      {/* Rodapé - Simplificado para o tema */}
-      <footer className="bg-surface text-gray-400 text-center p-6 border-t border-gray-800 mt-10">
-        <p className="text-sm">
+      {/* Rodapé */}
+      <footer style={footerStyle}>
+        <p>
           © 2024 ShapeMe - Sistema de Cadastro de Receitas | Desenvolvido com ❤️ para uma vida mais saudável
         </p>
-        <div className="mt-2 text-xs opacity-80">
-          <span className="mr-2">🌱 Sistema de Cadastro</span> | 
-          <span className="mx-2">🥗 API REST</span> | 
-          <span className="ml-2">💚 Open Source</span>
+        <div style={{ marginTop: '1rem', fontSize: '0.9rem', opacity: 0.8 }}>
+          <span>🌱 Sistema de Cadastro</span> | 
+          <span> 🥗 API REST</span> | 
+          <span> 💚 Open Source</span>
         </div>
       </footer>
     </div>

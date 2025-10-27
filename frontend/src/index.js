@@ -5,11 +5,10 @@ import App from './App';
 import { AuthProvider } from './context/AuthContext';
 
 // 🔹 CSS gerado pelo Tailwind CLI (prebuild/prestart)
-import './netflix-theme.css';
+import './index.css';
 
 // 🔹 Inicializa i18n do projeto (garante LanguageSwitcher)
 import './i18n';
-
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
