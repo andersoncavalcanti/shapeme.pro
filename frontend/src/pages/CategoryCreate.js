@@ -13,28 +13,25 @@ const CategoryCreate = () => {
     name_es: '',
   });
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [err, setErr] = useState('');
 
   const containerStyle = {
     maxWidth: '900px',
     margin: '0 auto',
     padding: '2rem',
   };
-
   const titleStyle = {
     fontSize: '2rem',
     color: '#2E8B57',
     marginBottom: '1.5rem',
     fontWeight: 'bold',
   };
-
   const labelStyle = {
     display: 'block',
     fontWeight: '600',
     marginBottom: '0.5rem',
     color: '#374151',
   };
-
   const inputStyle = {
     width: '100%',
     border: '1px solid #d1d5db',
@@ -43,7 +40,6 @@ const CategoryCreate = () => {
     outline: 'none',
     marginBottom: '1rem',
   };
-
   const buttonPrimary = {
     backgroundColor: '#2E8B57',
     color: 'white',
@@ -57,7 +53,6 @@ const CategoryCreate = () => {
     display: 'inline-block',
     marginRight: '0.75rem',
   };
-
   const buttonSecondary = {
     backgroundColor: '#e5e7eb',
     color: '#111827',
@@ -77,24 +72,19 @@ const CategoryCreate = () => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setErr('');
     setSubmitting(true);
 
     try {
-      // Envia no formato que o backend espera
       await apiService.createCategory({
         name_pt: form.name_pt.trim(),
         name_en: form.name_en.trim(),
         name_es: form.name_es.trim(),
       });
-
-      // Volta para lista com sucesso
       navigate('/categories');
-    } catch (err) {
-      console.error('Erro ao criar categoria:', err);
-      setError(
-        t('categories.createError', 'Não foi possível criar a categoria.')
-      );
+    } catch (e) {
+      console.error('Erro ao criar categoria:', e);
+      setErr(e.message || t('categories.createError', 'Não foi possível criar a categoria.'));
     } finally {
       setSubmitting(false);
     }
@@ -106,7 +96,7 @@ const CategoryCreate = () => {
         {t('categories.createTitle', '➕ Cadastrar Nova Categoria')}
       </h1>
 
-      {error && (
+      {err && (
         <div
           style={{
             backgroundColor: '#fee2e2',
@@ -117,7 +107,7 @@ const CategoryCreate = () => {
             marginBottom: '1rem',
           }}
         >
-          {error}
+          {err}
         </div>
       )}
 

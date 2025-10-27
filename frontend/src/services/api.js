@@ -8,7 +8,7 @@ const unwrap = (data, key) => {
   return data;
 };
 
-// 🔹 Limite máximo de upload em MB (mesmo do Nginx)
+// Limite máximo de upload em MB
 const DEFAULT_MAX_MB = 10;
 
 class ApiService {
@@ -33,8 +33,13 @@ class ApiService {
       let detail = `HTTP error! status: ${res.status}`;
       try {
         const errorData = await res.json();
-        detail = errorData?.detail || detail;
-      } catch (_) {}
+        detail = errorData?.detail ?? detail;
+      } catch {
+        try {
+          const txt = await res.text();
+          if (txt) detail = txt;
+        } catch {}
+      }
       throw new Error(detail);
     }
     try {
@@ -76,7 +81,7 @@ class ApiService {
 
   // ---------- Uploads / Imagens ----------
   async uploadImage(file, opts = { maxMB: DEFAULT_MAX_MB }) {
-    // 🔸 validações locais
+    // validações locais
     if (!file.type.startsWith('image/')) {
       throw new Error('Formato inválido. Envie uma imagem (JPEG, PNG, WEBP...).');
     }
@@ -93,14 +98,19 @@ class ApiService {
       body: formData,
     });
 
-    // 413 vem do Nginx quando excede client_max_body_size
     if (res.status === 413) {
       throw new Error('Arquivo muito grande (erro 413). Tente um arquivo menor.');
     }
-
     if (!res.ok) {
-      const txt = await res.text();
-      throw new Error(txt || 'Falha no upload');
+      // Extrai a melhor mensagem possível
+      try {
+        const data = await res.json();
+        const msg = data?.detail || JSON.stringify(data);
+        throw new Error(msg);
+      } catch {
+        const txt = await res.text();
+        throw new Error(txt || 'Falha no upload');
+      }
     }
 
     return await res.json(); // { public_id, thumbnail_url, medium_url, large_url }
@@ -123,6 +133,18 @@ class ApiService {
     const data = await this.request('/api/categories');
     return unwrap(data, 'categories');
   }
+  async createCategory(categoryData) {
+    return this.request('/api/categories', {
+      method: 'POST',
+      body: JSON.stringify(categoryData),
+    });
+  }
+  async updateCategory(id, categoryData) {
+    return this.request(`/api/categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(categoryData),
+    });
+  }
   async deleteCategory(categoryId) {
     return this.request(`/api/categories/${categoryId}`, { method: 'DELETE' });
   }
@@ -132,31 +154,26 @@ class ApiService {
     const data = await this.request('/api/recipes');
     return unwrap(data, 'recipes');
   }
-
   async getRecipesByCategory(categoryId) {
     const data = await this.request(`/api/recipes?category_id=${encodeURIComponent(categoryId)}`);
     return unwrap(data, 'recipes');
   }
-
   async getRecipe(id) {
     const data = await this.request(`/api/recipes/${id}`);
     return unwrap(data, 'recipe');
   }
-
   async createRecipe(recipeData) {
     return this.request('/api/recipes', {
       method: 'POST',
       body: JSON.stringify(recipeData),
     });
   }
-
   async updateRecipe(recipeId, recipeData) {
     return this.request(`/api/recipes/${recipeId}`, {
       method: 'PUT',
       body: JSON.stringify(recipeData),
     });
   }
-
   async deleteRecipe(recipeId) {
     return this.request(`/api/recipes/${recipeId}`, { method: 'DELETE' });
   }
@@ -165,3 +182,4 @@ class ApiService {
 const apiService = new ApiService();
 export default apiService;
 export { apiService };
+
