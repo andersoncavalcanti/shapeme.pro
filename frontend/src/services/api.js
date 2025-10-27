@@ -1,6 +1,14 @@
 // frontend/src/services/api.js
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://shapeme.pro';
 
+/** Helpers */
+const unwrap = (data, key) => {
+  if (data == null) return data;
+  if (Array.isArray(data)) return data;
+  if (typeof data === 'object' && data[key]) return data[key];
+  return data;
+};
+
 class ApiService {
   constructor() {
     this.headers = {
@@ -8,7 +16,6 @@ class ApiService {
     };
   }
 
-  // Define/limpa Authorization: 'Bearer <token>'
   setAuthHeader(token) {
     if (token) {
       this.headers['Authorization'] = token;
@@ -17,7 +24,6 @@ class ApiService {
     }
   }
 
-  // Método base (merge de headers seguro)
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
     const { headers: optHeaders = {}, ...rest } = options;
@@ -32,7 +38,6 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-
       if (!response.ok) {
         let detail = `HTTP error! status: ${response.status}`;
         try {
@@ -53,15 +58,13 @@ class ApiService {
     }
   }
 
-  // --------- Helpers axios-like ---------
+  // ---------- axios-like ----------
   async get(endpoint, headers = {}) {
     return this.request(endpoint, { method: 'GET', headers });
   }
 
   async post(endpoint, body, headers = {}) {
     let finalBody = body;
-
-    // Objeto simples -> JSON
     if (
       !(body instanceof FormData) &&
       !(body instanceof URLSearchParams) &&
@@ -70,12 +73,7 @@ class ApiService {
       finalBody = JSON.stringify(body);
       headers['Content-Type'] = 'application/json';
     }
-
-    return this.request(endpoint, {
-      method: 'POST',
-      body: finalBody,
-      headers,
-    });
+    return this.request(endpoint, { method: 'POST', body: finalBody, headers });
   }
 
   async put(endpoint, body, headers = {}) {
@@ -90,8 +88,7 @@ class ApiService {
     return this.request(endpoint, { method: 'DELETE', headers });
   }
 
-  // --------- Endpoints já usados no app ---------
-
+  // ---------- Endpoints ----------
   // Health
   async healthCheck() {
     return this.request('/api/health');
@@ -102,13 +99,25 @@ class ApiService {
     return this.request('/api/stats');
   }
 
-  // Recipes
-  async getRecipes() {
-    return this.request('/api/recipes');
+  // Categories
+  async getCategories() {
+    const data = await this.request('/api/categories');
+    return unwrap(data, 'categories');
   }
 
-  async getRecipe(recipeId) {
-    return this.request(`/api/recipes/${recipeId}`);
+  async deleteCategory(categoryId) {
+    return this.request(`/api/categories/${categoryId}`, { method: 'DELETE' });
+  }
+
+  // Recipes
+  async getRecipes() {
+    const data = await this.request('/api/recipes');
+    return unwrap(data, 'recipes'); // aceita [{...}] ou {recipes:[...]}
+  }
+
+  async getRecipe(id) {
+    const data = await this.request(`/api/recipes/${id}`);
+    return unwrap(data, 'recipe'); // aceita {...} ou {recipe:{...}}
   }
 
   async createRecipe(recipeData) {
@@ -124,45 +133,8 @@ class ApiService {
       body: JSON.stringify(recipeData),
     });
   }
-
-  async deleteRecipe(recipeId) {
-    return this.request(`/api/recipes/${recipeId}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Categories (💥 adicionados)
-  async getCategories() {
-    return this.request('/api/categories');
-  }
-
-  async getCategory(categoryId) {
-    return this.request(`/api/categories/${categoryId}`);
-  }
-
-  async createCategory(categoryData) {
-    return this.request('/api/categories', {
-      method: 'POST',
-      body: JSON.stringify(categoryData),
-    });
-  }
-
-  async updateCategory(categoryId, categoryData) {
-    return this.request(`/api/categories/${categoryId}`, {
-      method: 'PUT',
-      body: JSON.stringify(categoryData),
-    });
-  }
-
-  async deleteCategory(categoryId) {
-    return this.request(`/api/categories/${categoryId}`, {
-      method: 'DELETE',
-    });
-  }
 }
 
-// Exportações
 const apiService = new ApiService();
 export default apiService;
 export { apiService };
-

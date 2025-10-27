@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 
+const langBase = (lng) => (lng ? String(lng).split('-')[0] : 'pt'); // "pt-BR" -> "pt"
+
 const RecipeView = () => {
   const { id } = useParams();
   const { t, i18n } = useTranslation();
@@ -16,8 +18,7 @@ const RecipeView = () => {
         setLoading(true);
         setErr('');
         const data = await apiService.getRecipe(id);
-        // aceita retorno plano ou embrulhado
-        setRecipe(Array.isArray(data) ? data[0] : data);
+        setRecipe(data || null);
       } catch (e) {
         console.error('Erro ao carregar receita:', e);
         setErr(t('recipe.loadError', 'Não foi possível carregar a receita.'));
@@ -29,9 +30,9 @@ const RecipeView = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const lang = i18n.language || 'pt';
-  const titleKey = `title_${lang}`;
-  const descKey = `description_${lang}`;
+  const base = langBase(i18n.language);
+  const titleKey = `title_${base}`;
+  const descKey = `description_${base}`;
 
   if (loading) {
     return (
@@ -63,7 +64,7 @@ const RecipeView = () => {
     );
   }
 
-  const stars = Number(recipe.difficulty) || 0;
+  const stars = Math.max(0, Math.min(5, Number(recipe.difficulty) || 0));
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow">
@@ -84,7 +85,7 @@ const RecipeView = () => {
       <div className="grid grid-cols-2 gap-4 text-sm mb-4">
         <div>
           <span className="font-semibold">{t('recipe.difficulty', 'Dificuldade')}:</span>{' '}
-          {'★'.repeat(Math.min(stars, 5)) || t('recipe.na', 'N/A')}
+          {stars ? '★'.repeat(stars) : t('recipe.na', 'N/A')}
         </div>
         <div>
           <span className="font-semibold">{t('recipe.prepTime', 'Tempo de preparo')}:</span>{' '}
@@ -118,4 +119,5 @@ const RecipeView = () => {
 };
 
 export default RecipeView;
+
 

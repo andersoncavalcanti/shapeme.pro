@@ -26,7 +26,7 @@ const RecipeForm = () => {
   const [err, setErr] = useState('');
 
   useEffect(() => {
-    // carrega categorias para o select
+    // carrega categorias
     const loadCategories = async () => {
       try {
         const resp = await apiService.getCategories();
@@ -71,7 +71,7 @@ const RecipeForm = () => {
 
   const onChange = (e) => {
     const { name, value } = e.target;
-    // numeric fields
+    // numéricos
     if (name === 'difficulty') {
       return setForm((prev) => ({ ...prev, difficulty: Number(value) }));
     }
@@ -107,7 +107,6 @@ const RecipeForm = () => {
       } else {
         await apiService.createRecipe(payload);
       }
-
       navigate('/recipes');
     } catch (e) {
       console.error('Erro ao salvar receita:', e);
@@ -273,7 +272,6 @@ const RecipeForm = () => {
             <option value="">{t('recipe.selectCategory', 'Selecione uma categoria')}</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
-                {/* mostra em pt/en/es na ordem de preferência */}
                 {c.name_pt || c.name_en || c.name_es || `#${c.id}`}
               </option>
             ))}
@@ -302,4 +300,5 @@ const RecipeForm = () => {
 };
 
 export default RecipeForm;
+
 
