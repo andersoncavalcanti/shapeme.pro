@@ -1,140 +1,48 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import LanguageSwitcher from '../common/LanguageSwitcher'; // mantém o botão de idioma
 
 const Layout = ({ children }) => {
-  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
 
-  const changeLanguage = (lng) => {
-    i18n.changeLanguage(lng);
-  };
-
-  const headerStyle = {
-    backgroundColor: '#2E8B57',
-    color: 'white',
-    padding: '1rem 0',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    position: 'sticky',
-    top: 0,
-    zIndex: 1000,
-  };
-
-  const navStyle = {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '0 2rem',
-    flexWrap: 'wrap',
-    gap: '1rem',
-  };
-
-  const logoStyle = {
-    fontSize: '1.5rem',
-    fontWeight: 'bold',
-    textDecoration: 'none',
-    color: 'white',
-  };
-
-  const menuStyle = {
-    display: 'flex',
-    gap: '2rem',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  };
-
-  const linkStyle = {
-    color: 'white',
-    textDecoration: 'none',
-    fontWeight: '500',
-    transition: 'opacity 0.3s',
-    cursor: 'pointer',
-  };
-
-  const adminLinkStyle = {
-    ...linkStyle,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    padding: '0.5rem 1rem',
-    borderRadius: '20px',
-    fontSize: '0.9rem',
-  };
-
-  const footerStyle = {
-    backgroundColor: '#1a5d3a',
-    color: 'white',
-    textAlign: 'center',
-    padding: '2rem',
-    marginTop: '4rem',
+  const handleLogout = () => {
+    logout();               // limpa token e usuário
+    navigate('/login');     // redireciona para o login
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header style={headerStyle}>
-        <nav style={navStyle}>
-          <a href="/" style={logoStyle}>
-            🍃 ShapeMe
-          </a>
-          
-          <div style={menuStyle}>
-            <a href="/" style={linkStyle}>
-              🏠 {t('nav.home')}
-            </a>
-            <a href="/recipes" style={linkStyle}>
-              🍽️ {t('nav.recipes')}
-            </a>
-            <a href="/categories" style={linkStyle}>
-              🏷️ {t('nav.categories')}
-            </a>
-            <a href="/admin" style={adminLinkStyle}>
-              ⚙️ Admin
-            </a>
-            <a 
-              href="http://shapeme.pro/docs" 
-               
-              rel="noopener noreferrer"
-              style={linkStyle}
-            >
-              📚 API Docs
-            </a>
-          </div>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* 🔹 Cabeçalho */}
+      <header className="flex items-center justify-between bg-white shadow px-6 py-4">
+        {/* Logo / Nome */}
+        <div
+          className="text-xl font-semibold text-green-700 cursor-pointer select-none"
+          onClick={() => navigate('/')}
+        >
+          ShapeMe
+        </div>
 
-          <div style={menuStyle}>
-            {/* Seletor de idioma */}
-            <select
-              value={i18n.language}
-              onChange={(e) => changeLanguage(e.target.value)}
-              style={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                border: 'none',
-                padding: '0.5rem',
-                borderRadius: '4px',
-                fontSize: '0.9rem',
-              }}
+        {/* Ações à direita */}
+        <div className="flex items-center gap-4">
+          {/* Alternador de idioma */}
+          <LanguageSwitcher />
+
+          {/* 🔒 Botão Logout (só aparece se houver usuário logado) */}
+          {user && (
+            <button
+              onClick={handleLogout}
+              className="bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600 transition duration-200"
             >
-              <option value="pt" style={{ color: 'black' }}>🇧🇷 PT</option>
-              <option value="en" style={{ color: 'black' }}>��🇸 EN</option>
-              <option value="es" style={{ color: 'black' }}>🇪🇸 ES</option>
-            </select>
-          </div>
-        </nav>
+              {`🚪 Sair`}
+            </button>
+          )}
+        </div>
       </header>
 
-      <main style={{ flex: 1 }}>
-        {children}
-      </main>
-
-      <footer style={footerStyle}>
-        <p>
-          © 2024 ShapeMe - Sistema de Cadastro de Receitas | 
-          Desenvolvido com ❤️ para uma vida mais saudável
-        </p>
-        <div style={{ marginTop: '1rem', fontSize: '0.9rem', opacity: 0.8 }}>
-          <span>🌱 Sistema de Cadastro</span> | 
-          <span> 🥗 API REST</span> | 
-          <span> 💚 Open Source</span>
-        </div>
-      </footer>
+      {/* 🔹 Conteúdo principal */}
+      <main className="flex-1 p-6">{children}</main>
     </div>
   );
 };
