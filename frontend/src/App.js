@@ -1,3 +1,4 @@
+// src/App.js
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
@@ -9,7 +10,10 @@ import Login from './pages/Login';
 import Recipes from './pages/Recipes';
 import Categories from './pages/Categories';
 import CategoryCreate from './pages/CategoryCreate';
-import RecipeView from './pages/RecipeView';
+// ⬇️ troque esta linha...
+// import RecipeView from './pages/RecipeView';
+// ⬆️ ...pela linha abaixo:
+import RecipeDetail from './pages/RecipeDetail';
 import RecipeForm from './pages/RecipeForm';
 
 // Helper para manter header/i18n
@@ -18,7 +22,6 @@ const WithLayout = ({ children }) => <Layout>{children}</Layout>;
 function App() {
   return (
     <Routes>
-      {/* Login com Layout para manter idioma */}
       <Route
         path="/login"
         element={
@@ -28,7 +31,6 @@ function App() {
         }
       />
 
-      {/* Página inicial (ajuste se preferir outra) */}
       <Route
         path="/"
         element={
@@ -40,7 +42,6 @@ function App() {
         }
       />
 
-      {/* Receitas (lista) */}
       <Route
         path="/recipes"
         element={
@@ -52,17 +53,16 @@ function App() {
         }
       />
 
-      {/* 🔓 Ler receita — pública */}
+      {/* 🔓 Ler receita — agora com RecipeDetail */}
       <Route
         path="/recipes/:id"
         element={
           <WithLayout>
-            <RecipeView />
+            <RecipeDetail />
           </WithLayout>
         }
       />
 
-      {/* 🔒 Admin — nova receita */}
       <Route
         path="/recipes/new"
         element={
@@ -74,7 +74,6 @@ function App() {
         }
       />
 
-      {/* 🔒 Admin — editar receita */}
       <Route
         path="/recipes/:id/edit"
         element={
@@ -86,7 +85,6 @@ function App() {
         }
       />
 
-      {/* Categorias */}
       <Route
         path="/categories"
         element={
@@ -98,7 +96,6 @@ function App() {
         }
       />
 
-      {/* Nova categoria */}
       <Route
         path="/categories/new"
         element={
@@ -110,12 +107,9 @@ function App() {
         }
       />
 
-      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
 export default App;
-
-
