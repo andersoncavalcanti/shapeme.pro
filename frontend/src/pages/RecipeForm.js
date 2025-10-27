@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css'; // Importar os estilos do Quill
+// Mudança: A importação do CSS do Quill será movida para o index.js ou App.js
+// para evitar problemas de resolução de módulo em alguns ambientes de build.
+// Por enquanto, vou comentar a linha e pedir para o usuário fazer a importação
+// no arquivo de entrada principal, se o problema persistir.
+// import 'react-quill/dist/quill.snow.css'; 
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 
@@ -120,9 +124,9 @@ const RecipeForm = () => {
         title_pt: form.title_pt.trim(),
         title_en: form.title_en.trim(),
         title_es: form.title_es.trim(),
-        description_pt: form.description_pt.trim(),
-        description_en: form.description_en.trim(),
-        description_es: form.description_es.trim(),
+        description_pt: form.description_pt, // Não faz trim, pois pode ser HTML
+        description_en: form.description_en, // Não faz trim, pois pode ser HTML
+        description_es: form.description_es, // Não faz trim, pois pode ser HTML
         image_url: form.image_url || null,                         // public_id
         difficulty: Number(form.difficulty) || 1,
         prep_time_minutes: form.prep_time_minutes === '' ? null : Number(form.prep_time_minutes),
@@ -239,7 +243,7 @@ const RecipeForm = () => {
           </label>
           <div className="file-input-container">
             <input type="file" accept="image/*" onChange={onFileSelect} />
-            <span className="file-input-label">{t('recipe.uploadButton', 'Escolher Imagem')}</span>
+            <span className="file-input-label">{t('recipe.uploadButton')}</span>
           </div>
           {previewUrl && (
             <div className="mt-3">
