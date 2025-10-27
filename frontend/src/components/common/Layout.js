@@ -1,8 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../context/AuthContext';  // ✅ Import do contexto
 
 const Layout = ({ children }) => {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth(); // ✅ pega o usuário logado (para saber se é admin)
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
@@ -71,10 +73,12 @@ const Layout = ({ children }) => {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header style={headerStyle}>
         <nav style={navStyle}>
+          {/* Logo */}
           <a href="/" style={logoStyle}>
             🍃 ShapeMe
           </a>
-          
+
+          {/* Links principais */}
           <div style={menuStyle}>
             <a href="/" style={linkStyle}>
               🏠 {t('nav.home')}
@@ -85,21 +89,17 @@ const Layout = ({ children }) => {
             <a href="/categories" style={linkStyle}>
               🏷️ {t('nav.categories')}
             </a>
-            <a href="/admin" style={adminLinkStyle}>
-              ⚙️ Admin
-            </a>
-            <a 
-              href="http://shapeme.pro/docs" 
-               
-              rel="noopener noreferrer"
-              style={linkStyle}
-            >
-              📚 API Docs
-            </a>
+
+            {/* ✅ Mostra Admin só se logado e for admin */}
+            {user?.is_admin && (
+              <a href="/admin" style={adminLinkStyle}>
+                ⚙️ Admin
+              </a>
+            )}
           </div>
 
+          {/* Seletor de idioma */}
           <div style={menuStyle}>
-            {/* Seletor de idioma */}
             <select
               value={i18n.language}
               onChange={(e) => changeLanguage(e.target.value)}
@@ -113,21 +113,20 @@ const Layout = ({ children }) => {
               }}
             >
               <option value="pt" style={{ color: 'black' }}>🇧🇷 PT</option>
-              <option value="en" style={{ color: 'black' }}>��🇸 EN</option>
+              <option value="en" style={{ color: 'black' }}>🇺🇸 EN</option>
               <option value="es" style={{ color: 'black' }}>🇪🇸 ES</option>
             </select>
           </div>
         </nav>
       </header>
 
-      <main style={{ flex: 1 }}>
-        {children}
-      </main>
+      {/* Conteúdo */}
+      <main style={{ flex: 1 }}>{children}</main>
 
+      {/* Rodapé */}
       <footer style={footerStyle}>
         <p>
-          © 2024 ShapeMe - Sistema de Cadastro de Receitas | 
-          Desenvolvido com ❤️ para uma vida mais saudável
+          © 2024 ShapeMe - Sistema de Cadastro de Receitas | Desenvolvido com ❤️ para uma vida mais saudável
         </p>
         <div style={{ marginTop: '1rem', fontSize: '0.9rem', opacity: 0.8 }}>
           <span>🌱 Sistema de Cadastro</span> | 
