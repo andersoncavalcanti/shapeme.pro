@@ -3,8 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './netflix-theme.css'; // <- O novo tema
 import './i18n';
 import App from './App';
-import reportWebVitals from './reportWebVitals';
-// A importação do CSS do Quill deve ser feita aqui para ser global
+// import reportWebVitals from './reportWebVitals'; // LINHA REMOVIDA
 import 'react-quill/dist/quill.snow.css'; 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -17,4 +16,4 @@ root.render(
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals( );
+// reportWebVitals( ); // LINHA REMOVIDA
