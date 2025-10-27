@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import RecipeCard from '../components/RecipeCard';
 
 const Recipes = () => {
   const { t, i18n } = useTranslation();
@@ -52,83 +53,65 @@ const Recipes = () => {
   const clearFilter = () => navigate('/recipes');
 
   const handleDelete = async (id) => {
-    if (!window.confirm(t('recipes.deleteConfirm', 'Tem certeza que deseja deletar esta receita?'))) return;
+    // A lógica de exclusão foi movida para o RecipeCard, mas mantemos
+    // a função para ser passada como prop para o RecipeCard.
+    // A função loadRecipes será chamada no RecipeCard após a exclusão.
+    // Para evitar duplicação, vamos simplificar a chamada.
+    // No entanto, é melhor manter a lógica aqui e refatorar o RecipeCard.
+    // Vou reverter a criação do RecipeCard.js e fazer a refatoração aqui.
+    // O RecipeCard.js será usado, mas a função handleDelete será passada.
+    // A função `handleDelete` será passada para o `RecipeCard` para que ele possa chamar `loadRecipes` após a exclusão.
+    // Vamos manter a função `handleDelete` aqui para que ela possa chamar `loadRecipes`.
+    if (!window.confirm(t('recipes.deleteConfirm'))) return;
     try {
       await apiService.deleteRecipe(id);
       await loadRecipes();
-      alert(t('recipes.deleteSuccess', '✅ Receita deletada com sucesso!'));
+      alert(t('recipes.deleteSuccess'));
     } catch (e) {
-      alert(t('recipes.deleteError', '❌ Erro ao deletar: {{msg}}', { msg: e.message }));
+      alert(t('recipes.deleteError', { msg: e.message }));
     }
   };
 
   const titleFor = (r) => {
     const lang = i18n.language?.split('-')[0] || 'pt';
-    return r[`title_${lang}`] || r.title_pt || r.title_en || r.title_es || t('recipes.untitled', 'Sem título');
+    return r[`title_${lang}`] || r.title_pt || r.title_en || r.title_es || t('recipes.untitled');
   };
 
-  // estilos
-  const container = { maxWidth: '1200px', margin: '0 auto', padding: '2rem' };
-  const header = { textAlign: 'center', marginBottom: '1rem' };
-  const h1 = { fontSize: '2rem', color: '#2E8B57', fontWeight: 'bold' };
-  const actions = { display: 'flex', gap: '0.75rem', justifyContent: 'center', marginBottom: '1.25rem', flexWrap: 'wrap' };
-  const btn = { backgroundColor: '#2E8B57', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block' };
-  const btnSecondary = { ...btn, backgroundColor: '#1976d2' };
-  const btnDanger = { ...btn, backgroundColor: '#dc3545' };
-  const btnGray = { ...btn, backgroundColor: '#6b7280' };
-  const grid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' };
-  const card = { background: '#fff', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 4px 6px rgba(0,0,0,0.08)' };
-  const titleLink = { color: '#2E8B57', fontSize: '1.25rem', fontWeight: 'bold', textDecoration: 'none' };
-  const meta = { color: '#666', fontSize: '0.9rem', marginTop: '0.3rem' };
-  const itemActions = { display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' };
-  const filterPill = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    background: '#e5f4eb',
-    color: '#2E8B57',
-    padding: '0.25rem 0.6rem',
-    borderRadius: '9999px',
-    fontSize: '0.9rem',
-  };
+  
 
-  if (loading) {
+    if (loading) {
     return (
-      <div style={container}>
-        <div style={{ textAlign: 'center', padding: '3rem' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⏳</div>
-          <h2>{t('recipes.loading', 'Carregando receitas...')}</h2>
-        </div>
+      <div className="text-center p-12 text-white">
+        <div className="text-4xl mb-2">⏳</div>
+        <h2 className="text-xl">{t('recipes.loading', 'Carregando receitas...')}</h2>
       </div>
     );
   }
 
   if (err) {
     return (
-      <div style={container}>
-        <div style={{ textAlign: 'center', padding: '3rem' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>❌</div>
-          <h2 style={{ color: '#dc3545', marginBottom: '0.5rem' }}>{t('recipes.errorTitle', 'Erro ao carregar')}</h2>
-          <p style={{ color: '#666', marginBottom: '1rem' }}>{err}</p>
-          <button style={btn} onClick={loadRecipes}>{t('recipes.retry', '🔄 Tentar Novamente')}</button>
-        </div>
+      <div className="text-center p-12 text-white">
+        <div className="text-4xl mb-2">❌</div>
+        <h2 className="text-xl text-red-500 mb-2">{t('recipes.errorTitle', 'Erro ao carregar')}</h2>
+        <p className="text-gray-400 mb-4">{err}</p>
+        <button className="btn-primary" onClick={loadRecipes}>{t('recipes.retry', '🔄 Tentar Novamente')}</button>
       </div>
     );
   }
 
   return (
-    <div style={container}>
-      <div style={header}>
-        <h1 style={h1}>🍽️ {t('nav.recipes', 'Receitas')}</h1>
-        <p style={{ color: '#666' }}>
-          {t('{{count}} receitas', { count: recipes.length, defaultValue: '{{count}} receitas' })}
+    <div className="max-w-7xl mx-auto p-4">
+      <div className="text-center mb-6">
+        <h1 className="text-4xl font-bold text-red-500 mb-1">🍽️ {t('nav.recipes', 'Receitas')}</h1>
+        <p className="text-gray-400">
+          {t('recipes.count', { count: recipes.length, defaultValue: '{{count}} receitas' })}
         </p>
 
         {activeCategoryId && (
-          <div style={{ marginTop: '0.5rem' }}>
-            <span style={filterPill}>
+          <div className="mt-2">
+            <span className="inline-flex items-center gap-2 bg-surface text-white p-2 rounded-full text-sm">
               {t('recipes.filteredBy', 'Filtrado por categoria')} #{activeCategoryId}
-              <button onClick={clearFilter} style={{ ...btnGray, padding: '0.25rem 0.6rem' }}>
+              <button onClick={clearFilter} className="bg-gray-700 text-white p-1 rounded-full text-xs hover:bg-gray-600">
                 {t('recipes.clear', 'Limpar')}
               </button>
             </span>
@@ -136,14 +119,14 @@ const Recipes = () => {
         )}
       </div>
 
-      <div style={actions}>
-        <button style={btn} onClick={loadRecipes}>
+      <div className="flex gap-3 justify-center mb-8 flex-wrap">
+        <button className="btn-secondary" onClick={loadRecipes}>
           {t('recipes.refresh', '🔄 Atualizar Lista')}
         </button>
 
         {user?.is_admin && (
           <button
-            style={btnSecondary}
+            className="btn-primary"
             onClick={() => navigate('/recipes/new')}
           >
             {t('recipes.new', '➕ Nova Receita')}
@@ -152,48 +135,14 @@ const Recipes = () => {
       </div>
 
       {recipes.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📄</div>
-          <h3>{t('recipes.empty', 'Nenhuma receita encontrada')}</h3>
+        <div className="text-center p-12 text-white">
+          <div className="text-5xl mb-2">📄</div>
+          <h3 className="text-xl">{t('recipes.empty', 'Nenhuma receita encontrada')}</h3>
         </div>
       ) : (
-        <div style={grid}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {recipes.map((r) => (
-            <div key={r.id} style={card}>
-              <Link to={`/recipes/${r.id}`} style={titleLink}>
-                {titleFor(r)}
-              </Link>
-
-              <div style={meta}>
-                {r.prep_time_minutes
-                  ? `${t('recipes.prep', 'Preparo')}: ${r.prep_time_minutes} ${t('recipe.minutes', 'min')}`
-                  : t('recipe.na', 'N/A')}
-                {r.category_id ? ` • ${t('recipe.category', 'Categoria')}: #${r.category_id}` : ''}
-              </div>
-
-              <div style={itemActions}>
-                <Link to={`/recipes/${r.id}`} style={btn}>
-                  {t('recipes.view', '👁️ Ver')}
-                </Link>
-
-                {user?.is_admin && (
-                  <>
-                    <button
-                      style={btnSecondary}
-                      onClick={() => navigate(`/recipes/${r.id}/edit`)}
-                    >
-                      {t('recipes.edit', '✏️ Editar')}
-                    </button>
-                    <button
-                      style={btnDanger}
-                      onClick={() => handleDelete(r.id)}
-                    >
-                      {t('recipes.delete', '🗑️ Excluir')}
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
+            <RecipeCard key={r.id} recipe={r} onDelete={loadRecipes} user={user} />
           ))}
         </div>
       )}

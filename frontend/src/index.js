@@ -5,7 +5,7 @@ import App from './App';
 import { AuthProvider } from './context/AuthContext';
 
 // 🔹 CSS gerado pelo Tailwind CLI (prebuild/prestart)
-import './index.css';
+import './netflix-theme.css';
 
 // 🔹 Inicializa i18n do projeto (garante LanguageSwitcher)
 import './i18n';
