@@ -24,13 +24,13 @@ const Recipes = () => {
 
   const loadRecipes = async () => {
     try {
-      setLoading(true); setErr('');
+      setLoading(true);
+      setErr('');
       let list;
       if (activeCategoryId) {
         try {
           list = await apiService.getRecipesByCategory(activeCategoryId);
         } catch {
-          // fallback: se API não suportar query param, pega tudo e filtra no cliente
           const all = await apiService.getRecipes();
           list = (Array.isArray(all) ? all : (all?.recipes || [])).filter(
             (r) => String(r.category_id) === String(activeCategoryId)
@@ -51,6 +51,17 @@ const Recipes = () => {
 
   const clearFilter = () => navigate('/recipes');
 
+  const handleDelete = async (id) => {
+    if (!window.confirm(t('recipes.deleteConfirm', 'Tem certeza que deseja deletar esta receita?'))) return;
+    try {
+      await apiService.deleteRecipe(id);
+      await loadRecipes();
+      alert(t('recipes.deleteSuccess', '✅ Receita deletada com sucesso!'));
+    } catch (e) {
+      alert(t('recipes.deleteError', '❌ Erro ao deletar: {{msg}}', { msg: e.message }));
+    }
+  };
+
   const titleFor = (r) => {
     const lang = i18n.language?.split('-')[0] || 'pt';
     return r[`title_${lang}`] || r.title_pt || r.title_en || r.title_es || t('recipes.untitled', 'Sem título');
@@ -63,6 +74,7 @@ const Recipes = () => {
   const actions = { display: 'flex', gap: '0.75rem', justifyContent: 'center', marginBottom: '1.25rem', flexWrap: 'wrap' };
   const btn = { backgroundColor: '#2E8B57', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block' };
   const btnSecondary = { ...btn, backgroundColor: '#1976d2' };
+  const btnDanger = { ...btn, backgroundColor: '#dc3545' };
   const btnGray = { ...btn, backgroundColor: '#6b7280' };
   const grid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' };
   const card = { background: '#fff', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 4px 6px rgba(0,0,0,0.08)' };
@@ -167,12 +179,17 @@ const Recipes = () => {
                 {user?.is_admin && (
                   <>
                     <button
-                      style={{ ...btnSecondary }}
+                      style={btnSecondary}
                       onClick={() => navigate(`/recipes/${r.id}/edit`)}
                     >
                       {t('recipes.edit', '✏️ Editar')}
                     </button>
-                    {/* Excluir já existe se você manteve do patch anterior */}
+                    <button
+                      style={btnDanger}
+                      onClick={() => handleDelete(r.id)}
+                    >
+                      {t('recipes.delete', '🗑️ Excluir')}
+                    </button>
                   </>
                 )}
               </div>
