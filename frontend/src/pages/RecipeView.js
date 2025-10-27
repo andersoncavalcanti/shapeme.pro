@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 
-const langBase = (lng) => (lng ? String(lng).split('-')[0] : 'pt'); // "pt-BR" -> "pt"
+const langBase = (lng) => (lng ? String(lng).split('-')[0] : 'pt');
 
 const RecipeView = () => {
   const { id } = useParams();
@@ -11,6 +11,7 @@ const RecipeView = () => {
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -18,7 +19,17 @@ const RecipeView = () => {
         setLoading(true);
         setErr('');
         const data = await apiService.getRecipe(id);
-        setRecipe(data || null);
+        const r = Array.isArray(data) ? data[0] : data;
+        setRecipe(r || null);
+
+        if (r?.image_url) {
+          try {
+            const url = await apiService.getTransformedImageUrl(r.image_url, 'large');
+            setImageUrl(url);
+          } catch { setImageUrl(''); }
+        } else {
+          setImageUrl('');
+        }
       } catch (e) {
         console.error('Erro ao carregar receita:', e);
         setErr(t('recipe.loadError', 'Não foi possível carregar a receita.'));
@@ -41,7 +52,6 @@ const RecipeView = () => {
       </div>
     );
   }
-
   if (err) {
     return (
       <div className="p-6 text-center">
@@ -52,7 +62,6 @@ const RecipeView = () => {
       </div>
     );
   }
-
   if (!recipe) {
     return (
       <div className="p-6 text-center">
@@ -72,13 +81,9 @@ const RecipeView = () => {
         {recipe[titleKey] || recipe.title_pt || recipe.title_en || recipe.title_es}
       </h1>
 
-      {recipe.image_url && (
+      {imageUrl && (
         <div className="mb-4">
-          <img
-            src={recipe.image_url}
-            alt={recipe[titleKey] || 'recipe'}
-            className="w-full rounded-xl"
-          />
+          <img src={imageUrl} alt={recipe[titleKey] || 'recipe'} className="w-full rounded-xl" />
         </div>
       )}
 
@@ -89,9 +94,7 @@ const RecipeView = () => {
         </div>
         <div>
           <span className="font-semibold">{t('recipe.prepTime', 'Tempo de preparo')}:</span>{' '}
-          {recipe.prep_time_minutes
-            ? `${recipe.prep_time_minutes} ${t('recipe.minutes', 'min')}`
-            : t('recipe.na', 'N/A')}
+          {recipe.prep_time_minutes ? `${recipe.prep_time_minutes} ${t('recipe.minutes', 'min')}` : t('recipe.na', 'N/A')}
         </div>
         <div>
           <span className="font-semibold">{t('recipe.category', 'Categoria')}:</span>{' '}
@@ -119,5 +122,6 @@ const RecipeView = () => {
 };
 
 export default RecipeView;
+
 
 

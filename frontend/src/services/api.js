@@ -1,3 +1,4 @@
+// frontend/src/services/api.js
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://shapeme.pro';
 
 /** Helpers */
@@ -13,34 +14,31 @@ class ApiService {
     this.headers = { 'Content-Type': 'application/json' };
   }
 
+  // Auth
   setAuthHeader(token) {
     if (token) this.headers['Authorization'] = token;
     else delete this.headers['Authorization'];
   }
 
+  // Core request
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
     const { headers: optHeaders = {}, ...rest } = options;
     const config = { ...rest, headers: { ...this.headers, ...optHeaders } };
 
-    try {
-      const response = await fetch(url, config);
-      if (!response.ok) {
-        let detail = `HTTP error! status: ${response.status}`;
-        try {
-          const errorData = await response.json();
-          detail = errorData?.detail || detail;
-        } catch (_) {}
-        throw new Error(detail);
-      }
+    const res = await fetch(url, config);
+    if (!res.ok) {
+      let detail = `HTTP error! status: ${res.status}`;
       try {
-        return await response.json();
-      } catch {
-        return null;
-      }
-    } catch (err) {
-      console.error(`API Error (${endpoint}):`, err);
-      throw err;
+        const errorData = await res.json();
+        detail = errorData?.detail || detail;
+      } catch (_) {}
+      throw new Error(detail);
+    }
+    try {
+      return await res.json();
+    } catch {
+      return null;
     }
   }
 
@@ -74,6 +72,28 @@ class ApiService {
     return this.request(endpoint, { method: 'DELETE', headers });
   }
 
+  // ---------- Uploads / Imagens ----------
+  async uploadImage(file) {
+    // usa rota do backend /api/uploads/image
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`${API_BASE_URL}/api/uploads/image`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(txt || 'Falha no upload');
+    }
+    return await res.json(); // { public_id, thumbnail_url, medium_url, large_url }
+  }
+
+  async getTransformedImageUrl(publicId, size = 'medium') {
+    const data = await this.get(`/api/images/url?public_id=${encodeURIComponent(publicId)}&size=${encodeURIComponent(size)}`);
+    return data?.url || '';
+  }
+
   // ---------- Endpoints ----------
   // Health / Stats
   async healthCheck() { return this.request('/api/health'); }
@@ -93,14 +113,10 @@ class ApiService {
     const data = await this.request('/api/recipes');
     return unwrap(data, 'recipes');
   }
-
   async getRecipesByCategory(categoryId) {
-    // tenta endpoint com query param; se o backend não suportar e retornar 404/400,
-    // o catch cai lá em cima. Em último caso, o chamador pode filtrar client-side.
     const data = await this.request(`/api/recipes?category_id=${encodeURIComponent(categoryId)}`);
     return unwrap(data, 'recipes');
   }
-
   async getRecipe(id) {
     const data = await this.request(`/api/recipes/${id}`);
     return unwrap(data, 'recipe');
@@ -119,3 +135,4 @@ class ApiService {
 const apiService = new ApiService();
 export default apiService;
 export { apiService };
+

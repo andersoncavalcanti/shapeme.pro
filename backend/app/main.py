@@ -6,6 +6,9 @@ from .database import get_db
 from .models import User
 from typing import Optional
 import os
+from .routers.uploads import router as uploads_router
+
+
 
 # Configuração da aplicação
 app = FastAPI(
@@ -554,3 +557,7 @@ async def test_database():
             return {"database": "connected", "test_query": "success", "result": row[0]}
     except Exception as e:
         return {"database": "error", "message": str(e)}
+    
+
+
+app.include_router(uploads_router)  # <-- sem .router
