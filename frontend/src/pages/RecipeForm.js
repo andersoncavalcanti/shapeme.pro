@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import ReactQuill from 'react-quill';
-// Mudança: A importação do CSS do Quill será movida para o index.js ou App.js
-// para evitar problemas de resolução de módulo em alguns ambientes de build.
-// Por enquanto, vou comentar a linha e pedir para o usuário fazer a importação
-// no arquivo de entrada principal, se o problema persistir.
-// import 'react-quill/dist/quill.snow.css'; 
+
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 

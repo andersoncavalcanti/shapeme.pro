@@ -12,8 +12,6 @@ import CategoryCreate from './pages/CategoryCreate';
 import RecipeView from './pages/RecipeView';
 import RecipeForm from './pages/RecipeForm';
 
-import 'react-quill/dist/quill.snow.css';
-
 // Helper para manter header/i18n
 const WithLayout = ({ children }) => <Layout>{children}</Layout>;
 
