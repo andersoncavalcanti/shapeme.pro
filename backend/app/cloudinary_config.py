@@ -3,6 +3,8 @@ import cloudinary.uploader
 import cloudinary.api
 import os
 from typing import Optional
+import uuid
+
 
 # Configuração do Cloudinary
 cloudinary.config(
@@ -23,7 +25,8 @@ class CloudinaryService:
             result = cloudinary.uploader.upload(
                 file_content,
                 folder=folder,
-                public_id=f"{filename}_{cloudinary.utils.generate_uuid()}",
+                #public_id=f"{filename}_{cloudinary.utils.generate_uuid()}",
+                public_id = f"{filename}-{uuid.uuid4().hex[:8]}"  # gera um ID único e curto
                 resource_type="image",
                 format="webp",  # Converter para WebP para otimização
                 quality="auto:good",  # Qualidade automática otimizada
