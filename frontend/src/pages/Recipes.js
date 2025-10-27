@@ -16,25 +16,76 @@ const Recipes = () => {
 
   // --- Estados ---
   const [recipes, setRecipes] = useState([]);
-  const [thumbs, setThumbs] = useState({}); // { [id]: urlTransformada }
+  const [thumbs, setThumbs] = useState({});     // { [id]: urlTransformada }
+  const [catMap, setCatMap] = useState({});     // { [id]: categoryObj }
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
 
   useEffect(() => {
+    // carrega receitas sempre que mudar o filtro
     loadRecipes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCategoryId]);
 
+  useEffect(() => {
+    // tenta carregar o mapa de categorias (se o service existir)
+    loadCategories();
+  }, []);
+
   // --- Helpers ---
   const langBase = (lng) => (lng ? String(lng).split('-')[0] : 'pt');
+
   const titleFor = (r) => {
     const lang = langBase(i18n.language);
     return r[`title_${lang}`] || r.title_pt || r.title_en || r.title_es || t('recipes.untitled', 'Sem título');
   };
 
+  // Resolve o nome da categoria com base no idioma atual.
+  // 1) Usa recipe.category se vier populado.
+  // 2) Se não, procura no catMap por id.
+  // 3) Caso não ache, retorna null (não mostra nada).
+  const categoryNameFor = (r) => {
+    const lang = langBase(i18n.language);
+
+    // 1) direto do objeto da receita (se vier populado)
+    const c = r.category;
+    if (c && typeof c === 'object') {
+      const byLang =
+        c[`name_${lang}`] ||
+        c.name ||
+        c.name_pt ||
+        c.name_en ||
+        c.name_es;
+      if (byLang) return byLang;
+    }
+
+    // Alguns backends mandam em campos soltos
+    const fallbackInline =
+      r[`category_name_${lang}`] ||
+      r.category_name ||
+      (typeof r.category === 'string' ? r.category : null);
+    if (fallbackInline) return fallbackInline;
+
+    // 2) tenta pelo mapa (precisa de id)
+    const id = r.category_id ?? r.categoryId ?? c?.id ?? c?._id;
+    if (id != null && catMap && catMap[id]) {
+      const obj = catMap[id];
+      return (
+        obj?.[`name_${lang}`] ||
+        obj?.name ||
+        obj?.name_pt ||
+        obj?.name_en ||
+        obj?.name_es ||
+        String(obj)
+      );
+    }
+
+    // 3) nada encontrado
+    return null;
+  };
+
   // Busca miniaturas no backend (Cloudinary transform) de forma segura
   const prefetchThumbs = async (list) => {
-    // Evita estouro de requisições simultâneas
     const MAX_CONC = 6;
     const out = {};
     let idx = 0;
@@ -45,14 +96,15 @@ const Recipes = () => {
       const publicId = item?.image_url || item?.image || item?.imageUrl;
       if (!publicId) return; // sem imagem
       try {
-        const url = await apiService.getTransformedImageUrl(publicId, 'thumbnail'); // usa /api/images/url
+        // Implementação esperada no apiService:
+        // getTransformedImageUrl(publicId, 'thumbnail')
+        const url = await apiService.getTransformedImageUrl(publicId, 'thumbnail');
         if (url) out[id] = url;
       } catch {
-        /* sem estourar UI */
+        /* ignora falha individual */
       }
     };
 
-    // Processa em janelas de concorrência
     while (idx < list.length) {
       const slice = list.slice(idx, idx + MAX_CONC);
       // eslint-disable-next-line no-await-in-loop
@@ -60,6 +112,23 @@ const Recipes = () => {
       idx += MAX_CONC;
     }
     setThumbs(out);
+  };
+
+  // Carrega categorias (se houver endpoint)
+  const loadCategories = async () => {
+    try {
+      if (typeof apiService.getCategories !== 'function') return;
+      const data = await apiService.getCategories();
+      const arr = Array.isArray(data) ? data : (data?.results || data?.categories || []);
+      const map = {};
+      for (const c of arr) {
+        const id = c?.id ?? c?._id ?? c?.category_id;
+        if (id != null) map[id] = c;
+      }
+      setCatMap(map);
+    } catch {
+      // silencioso: se falhar, seguimos usando apenas os dados da própria receita
+    }
   };
 
   // --- Carregamento principal ---
@@ -84,7 +153,6 @@ const Recipes = () => {
       }
 
       setRecipes(list || []);
-      // Prefetch das thumbs (não bloqueia a pintura do texto)
       prefetchThumbs(list || []);
     } catch (e) {
       console.error('Erro ao carregar receitas:', e);
@@ -107,7 +175,7 @@ const Recipes = () => {
     }
   };
 
-  // --- Estilos inline minimalistas (sem libs) ---
+  // --- Estilos ---
   const container = { maxWidth: '1200px', margin: '0 auto', padding: '2rem' };
   const header = { textAlign: 'center', marginBottom: '1rem' };
   const h1 = { fontSize: '2rem', color: '#2E8B57', fontWeight: 'bold' };
@@ -121,7 +189,7 @@ const Recipes = () => {
   const grid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' };
   const card = { background: '#fff', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 4px 6px rgba(0,0,0,0.08)' };
 
-  // --- NOVO: wrapper da imagem + estilos para padronizar 4:3 ---
+  // Imagem padronizada 4:3
   const mediaWrap = {
     width: '100%',
     aspectRatio: '4 / 3',
@@ -216,10 +284,14 @@ const Recipes = () => {
             const id = r.id ?? r._id ?? r.recipe_id;
             const thumb = id ? thumbs[id] : '';
             const title = titleFor(r);
+            const catName = categoryNameFor(r);
+
+            // Tempo de preparo (tenta vários campos)
+            const prepMin = r.prep_time_minutes ?? r.time_minutes ?? r.prep_time ?? r.time;
 
             return (
               <div key={id} style={card}>
-                {/* NOVO: Imagem padronizada 4:3 com cover */}
+                {/* Imagem padronizada 4:3 com cover */}
                 <div style={mediaWrap}>
                   {thumb
                     ? <img src={thumb} alt={title} style={mediaImg} loading="lazy" />
@@ -231,12 +303,10 @@ const Recipes = () => {
                   {title}
                 </Link>
 
-                {/* Meta */}
+                {/* Meta (NOME da categoria, não ID) */}
                 <div style={meta}>
-                  {r.prep_time_minutes
-                    ? `${t('recipes.prep', 'Preparo')}: ${r.prep_time_minutes} ${t('recipe.minutes', 'min')}`
-                    : t('recipe.na', 'N/A')}
-                  {r.category_id ? ` • ${t('recipe.category', 'Categoria')}: #${r.category_id}` : ''}
+                  {prepMin ? `${t('recipes.prep', 'Preparo')}: ${prepMin} ${t('recipe.minutes', 'min')}` : t('recipe.na', 'N/A')}
+                  {catName ? ` • ${t('recipe.category', 'Categoria')}: ${catName}` : ''}
                 </div>
 
                 {/* Ações */}
