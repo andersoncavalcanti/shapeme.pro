@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import LogoutButton from './LogoutButton';
 
 const AdminRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -18,11 +19,15 @@ const AdminRoute = ({ children }) => {
   }
 
   if (!user.is_admin) {
-    // usuário autenticado mas não-admin → manda para a raiz (ou outra página)
     return <Navigate to="/" replace />;
   }
 
-  return children;
+  return (
+    <>
+      {children}
+      <LogoutButton />
+    </>
+  );
 };
 
 export default AdminRoute;

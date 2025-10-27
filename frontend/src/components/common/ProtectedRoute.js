@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import LogoutButton from './LogoutButton';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -17,7 +18,14 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return children;
+  // Renderiza a página + botão flutuante de logout (sem tocar no topo)
+  return (
+    <>
+      {children}
+      <LogoutButton />
+    </>
+  );
 };
 
 export default ProtectedRoute;
+
