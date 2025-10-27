@@ -1,11 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
+// import ReactQuill from 'react-quill'; // Removido para corrigir o erro de build
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
-
-// Usamos React.lazy e useMemo para importação dinâmica,
-// o que pode contornar problemas de resolução de módulo em alguns ambientes de build.
-const ReactQuill = React.lazy(() => import('react-quill'));
 
 const MAX_MB = 10; // mesmo limite que o backend/Nginx aceitam
 
@@ -91,11 +88,6 @@ const RecipeForm = () => {
     setForm((p) => ({ ...p, [name]: value }));
   };
 
-  // Handler para o editor de texto rico
-  const onDescriptionChange = (lang, content) => {
-    setForm((p) => ({ ...p, [`description_${lang}`]: content }));
-  };
-
   // Upload para Cloudinary via backend
   const onFileSelect = async (e) => {
     const file = e.target.files?.[0];
@@ -122,9 +114,9 @@ const RecipeForm = () => {
         title_pt: form.title_pt.trim(),
         title_en: form.title_en.trim(),
         title_es: form.title_es.trim(),
-        description_pt: form.description_pt, // Não faz trim, pois pode ser HTML
-        description_en: form.description_en, // Não faz trim, pois pode ser HTML
-        description_es: form.description_es, // Não faz trim, pois pode ser HTML
+        description_pt: form.description_pt.trim(), // Voltando para trim, pois é um textarea
+        description_en: form.description_en.trim(), // Voltando para trim, pois é um textarea
+        description_es: form.description_es.trim(), // Voltando para trim, pois é um textarea
         image_url: form.image_url || null,                         // public_id
         difficulty: Number(form.difficulty) || 1,
         prep_time_minutes: form.prep_time_minutes === '' ? null : Number(form.prep_time_minutes),
@@ -142,23 +134,6 @@ const RecipeForm = () => {
       setSubmitting(false);
     }
   };
-
-  const modules = useMemo(() => ({
-    toolbar: [
-      [{ 'header': [1, 2, false] }],
-      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-      ['link'],
-      ['clean']
-    ],
-  }), []);
-
-  const formats = useMemo(() => ([
-    'header',
-    'bold', 'italic', 'underline', 'strike', 'blockquote',
-    'list', 'bullet',
-    'link'
-  ]), []);
 
   return (
     <div className="max-w-4xl mx-auto p-6 form-container">
@@ -190,49 +165,20 @@ const RecipeForm = () => {
           </div>
         </div>
 
-        {/* Descrições - Rich Text Editor */}
+        {/* Descrições - Voltando para Textarea simples */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <React.Suspense fallback={<div>Carregando Editor...</div>}>
-            <div>
-              <label className="form-label">{t('recipe.descriptionPt')}</label>
-              <div className="quill-editor-container">
-                <ReactQuill
-                  theme="snow"
-                  value={form.description_pt}
-                  onChange={(content) => onDescriptionChange('pt', content)}
-                  modules={modules}
-                  formats={formats}
-                  className="bg-gray-800 text-white"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="form-label">{t('recipe.descriptionEn')}</label>
-              <div className="quill-editor-container">
-                <ReactQuill
-                  theme="snow"
-                  value={form.description_en}
-                  onChange={(content) => onDescriptionChange('en', content)}
-                  modules={modules}
-                  formats={formats}
-                  className="bg-gray-800 text-white"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="form-label">{t('recipe.descriptionEs')}</label>
-              <div className="quill-editor-container">
-                <ReactQuill
-                  theme="snow"
-                  value={form.description_es}
-                  onChange={(content) => onDescriptionChange('es', content)}
-                  modules={modules}
-                  formats={formats}
-                  className="bg-gray-800 text-white"
-                />
-              </div>
-            </div>
-          </React.Suspense>
+          <div>
+            <label className="form-label">{t('recipe.descriptionPt')}</label>
+            <textarea name="description_pt" value={form.description_pt} onChange={onChange} className="form-input" rows={6} required />
+          </div>
+          <div>
+            <label className="form-label">{t('recipe.descriptionEn')}</label>
+            <textarea name="description_en" value={form.description_en} onChange={onChange} className="form-input" rows={6} required />
+          </div>
+          <div>
+            <label className="form-label">{t('recipe.descriptionEs')}</label>
+            <textarea name="description_es" value={form.description_es} onChange={onChange} className="form-input" rows={6} required />
+          </div>
         </div>
 
         {/* Upload de imagem - Corrigido */}

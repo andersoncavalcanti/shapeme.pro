@@ -9,7 +9,7 @@ import './netflix-theme.css';
 
 // 🔹 Inicializa i18n do projeto (garante LanguageSwitcher)
 import './i18n';
-import './quill-snow-local.css'; // Importação do CSS do Quill local
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
