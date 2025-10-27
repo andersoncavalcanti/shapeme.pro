@@ -1,4 +1,3 @@
-// frontend/src/services/api.js
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://shapeme.pro';
 
 /** Helpers */
@@ -11,30 +10,18 @@ const unwrap = (data, key) => {
 
 class ApiService {
   constructor() {
-    this.headers = {
-      'Content-Type': 'application/json',
-    };
+    this.headers = { 'Content-Type': 'application/json' };
   }
 
   setAuthHeader(token) {
-    if (token) {
-      this.headers['Authorization'] = token;
-    } else {
-      delete this.headers['Authorization'];
-    }
+    if (token) this.headers['Authorization'] = token;
+    else delete this.headers['Authorization'];
   }
 
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
     const { headers: optHeaders = {}, ...rest } = options;
-
-    const config = {
-      ...rest,
-      headers: {
-        ...this.headers,
-        ...optHeaders,
-      },
-    };
+    const config = { ...rest, headers: { ...this.headers, ...optHeaders } };
 
     try {
       const response = await fetch(url, config);
@@ -46,19 +33,18 @@ class ApiService {
         } catch (_) {}
         throw new Error(detail);
       }
-
       try {
         return await response.json();
       } catch {
         return null;
       }
-    } catch (error) {
-      console.error(`API Error (${endpoint}):`, error);
-      throw error;
+    } catch (err) {
+      console.error(`API Error (${endpoint}):`, err);
+      throw err;
     }
   }
 
-  // ---------- axios-like ----------
+  // ------------- axios-like -------------
   async get(endpoint, headers = {}) {
     return this.request(endpoint, { method: 'GET', headers });
   }
@@ -88,23 +74,16 @@ class ApiService {
     return this.request(endpoint, { method: 'DELETE', headers });
   }
 
-  // ---------- Endpoints ----------
-  // Health
-  async healthCheck() {
-    return this.request('/api/health');
-  }
-
-  // Stats
-  async getStats() {
-    return this.request('/api/stats');
-  }
+  // ------------- Endpoints -------------
+  // Health / Stats
+  async healthCheck() { return this.request('/api/health'); }
+  async getStats() { return this.request('/api/stats'); }
 
   // Categories
   async getCategories() {
     const data = await this.request('/api/categories');
-    return unwrap(data, 'categories');
+    return unwrap(data, 'categories'); // retorna array
   }
-
   async deleteCategory(categoryId) {
     return this.request(`/api/categories/${categoryId}`, { method: 'DELETE' });
   }
@@ -112,26 +91,26 @@ class ApiService {
   // Recipes
   async getRecipes() {
     const data = await this.request('/api/recipes');
-    return unwrap(data, 'recipes'); // aceita [{...}] ou {recipes:[...]}
+    return unwrap(data, 'recipes'); // array
   }
-
   async getRecipe(id) {
     const data = await this.request(`/api/recipes/${id}`);
-    return unwrap(data, 'recipe'); // aceita {...} ou {recipe:{...}}
+    return unwrap(data, 'recipe'); // objeto
   }
-
   async createRecipe(recipeData) {
     return this.request('/api/recipes', {
       method: 'POST',
       body: JSON.stringify(recipeData),
     });
   }
-
   async updateRecipe(recipeId, recipeData) {
     return this.request(`/api/recipes/${recipeId}`, {
       method: 'PUT',
       body: JSON.stringify(recipeData),
     });
+  }
+  async deleteRecipe(recipeId) {
+    return this.request(`/api/recipes/${recipeId}`, { method: 'DELETE' });
   }
 }
 
