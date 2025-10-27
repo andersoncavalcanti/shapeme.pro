@@ -1,121 +1,78 @@
+// frontend/src/App.js
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
-import ProtectedRoute from './components/common/ProtectedRoute';
-import AdminRoute from './components/common/AdminRoute';
+import './i18n'; // garante i18n carregado
+
+// Layout
 import Layout from './components/common/Layout';
 
-import Login from './pages/Login';
+// Páginas
+import Home from './pages/Home';
 import Recipes from './pages/Recipes';
+import RecipeDetail from './pages/RecipeDetail'; // <— NOVA rota de detalhe
 import Categories from './pages/Categories';
-import CategoryCreate from './pages/CategoryCreate';
-import RecipeView from './pages/RecipeView';
-import RecipeForm from './pages/RecipeForm';
+import Admin from './pages/Admin';
+import Login from './pages/Login';
 
-// Helper para manter header/i18n
-const WithLayout = ({ children }) => <Layout>{children}</Layout>;
+// Auth
+import { useAuth } from './context/AuthContext';
 
-function App() {
+// Proteção simples para a rota /admin
+function RequireAdmin({ children }) {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  if (!user || !user.is_admin) {
+    // guarda de navegação: volta pra onde tentou entrar após login
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  return children;
+}
+
+// Página 404 simples
+function NotFound() {
   return (
-    <Routes>
-      {/* Login com Layout para manter idioma */}
-      <Route
-        path="/login"
-        element={
-          <WithLayout>
-            <Login />
-          </WithLayout>
-        }
-      />
-
-      {/* Página inicial (ajuste se preferir outra) */}
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <WithLayout>
-              <Recipes />
-            </WithLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Receitas (lista) */}
-      <Route
-        path="/recipes"
-        element={
-          <ProtectedRoute>
-            <WithLayout>
-              <Recipes />
-            </WithLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      {/* 🔓 Ler receita — pública */}
-      <Route
-        path="/recipes/:id"
-        element={
-          <WithLayout>
-            <RecipeView />
-          </WithLayout>
-        }
-      />
-
-      {/* 🔒 Admin — nova receita */}
-      <Route
-        path="/recipes/new"
-        element={
-          <AdminRoute>
-            <WithLayout>
-              <RecipeForm />
-            </WithLayout>
-          </AdminRoute>
-        }
-      />
-
-      {/* 🔒 Admin — editar receita */}
-      <Route
-        path="/recipes/:id/edit"
-        element={
-          <AdminRoute>
-            <WithLayout>
-              <RecipeForm />
-            </WithLayout>
-          </AdminRoute>
-        }
-      />
-
-      {/* Categorias */}
-      <Route
-        path="/categories"
-        element={
-          <ProtectedRoute>
-            <WithLayout>
-              <Categories />
-            </WithLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Nova categoria */}
-      <Route
-        path="/categories/new"
-        element={
-          <ProtectedRoute>
-            <WithLayout>
-              <CategoryCreate />
-            </WithLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '2rem' }}>
+      <h1 style={{ marginTop: 0 }}>404</h1>
+      <p>Página não encontrada.</p>
+      <a href="/" style={{ color: '#2E8B57', fontWeight: 700, textDecoration: 'none' }}>Voltar ao início</a>
+    </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      {/* Layout aplica header/footer em todas as páginas */}
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Home />} />
 
+          {/* Lista de receitas e detalhe */}
+          <Route path="/recipes" element={<Recipes />} />
+          <Route path="/recipes/:id" element={<RecipeDetail />} />
 
+          {/* Categorias */}
+          <Route path="/categories" element={<Categories />} />
+
+          {/* Admin protegido */}
+          <Route
+            path="/admin"
+            element={
+              <RequireAdmin>
+                <Admin />
+              </RequireAdmin>
+            }
+          />
+
+          {/* Login */}
+          <Route path="/login" element={<Login />} />
+
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Layout>
+    </BrowserRouter>
+  );
+}

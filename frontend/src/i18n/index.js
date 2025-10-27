@@ -69,6 +69,7 @@ const resources = {
       "form.category": "Categoria",
       "form.save": "Salvar",
       "form.cancel": "Cancelar",
+      "form.password":"Senha",
       
       // Status
       "status.loading": "Carregando...",
@@ -215,6 +216,8 @@ const resources = {
       "form.category": "Category",
       "form.save": "Save",
       "form.cancel": "Cancel",
+      "form.password":"Password",
+
 
       // Status
       "status.loading": "Loading...",
@@ -361,6 +364,7 @@ const resources = {
       "form.category": "Categoría",
       "form.save": "Guardar",
       "form.cancel": "Cancelar",
+      "form.password":"Contraseña",
 
       // Estado
       "status.loading": "Cargando...",

@@ -1,103 +1,114 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+// frontend/src/pages/Recipes.js
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { cldCard } from '../utils/image';
 
 const Recipes = () => {
-  const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
-
-  const qs = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const activeCategoryId = qs.get('category'); // string ou null
-
+  const { t } = useTranslation();
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
 
-  useEffect(() => {
-    loadRecipes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategoryId]);
+  useEffect(() => { load(); }, []);
 
-  const loadRecipes = async () => {
+  async function load() {
     try {
       setLoading(true);
       setErr('');
-      let list;
-      if (activeCategoryId) {
-        try {
-          list = await apiService.getRecipesByCategory(activeCategoryId);
-        } catch {
-          const all = await apiService.getRecipes();
-          list = (Array.isArray(all) ? all : (all?.recipes || [])).filter(
-            (r) => String(r.category_id) === String(activeCategoryId)
-          );
-        }
-      } else {
-        const resp = await apiService.getRecipes();
-        list = Array.isArray(resp) ? resp : (resp?.recipes || []);
-      }
-      setRecipes(list);
+      const list = await apiService.getRecipes(); // deve retornar array
+      setRecipes(Array.isArray(list) ? list : []);
     } catch (e) {
-      console.error('Erro ao carregar receitas:', e);
-      setErr(t('recipes.loadError', 'Não foi possível carregar as receitas.'));
+      console.error(e);
+      setErr(t('recipes.loadError'));
     } finally {
       setLoading(false);
     }
-  };
-
-  const clearFilter = () => navigate('/recipes');
-
-  const handleDelete = async (id) => {
-    if (!window.confirm(t('recipes.deleteConfirm', 'Tem certeza que deseja deletar esta receita?'))) return;
-    try {
-      await apiService.deleteRecipe(id);
-      await loadRecipes();
-      alert(t('recipes.deleteSuccess', '✅ Receita deletada com sucesso!'));
-    } catch (e) {
-      alert(t('recipes.deleteError', '❌ Erro ao deletar: {{msg}}', { msg: e.message }));
-    }
-  };
-
-  const titleFor = (r) => {
-    const lang = i18n.language?.split('-')[0] || 'pt';
-    return r[`title_${lang}`] || r.title_pt || r.title_en || r.title_es || t('recipes.untitled', 'Sem título');
-  };
+  }
 
   // estilos
   const container = { maxWidth: '1200px', margin: '0 auto', padding: '2rem' };
-  const header = { textAlign: 'center', marginBottom: '1rem' };
-  const h1 = { fontSize: '2rem', color: '#2E8B57', fontWeight: 'bold' };
-  const actions = { display: 'flex', gap: '0.75rem', justifyContent: 'center', marginBottom: '1.25rem', flexWrap: 'wrap' };
-  const btn = { backgroundColor: '#2E8B57', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block' };
-  const btnSecondary = { ...btn, backgroundColor: '#1976d2' };
-  const btnDanger = { ...btn, backgroundColor: '#dc3545' };
-  const btnGray = { ...btn, backgroundColor: '#6b7280' };
-  const grid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' };
-  const card = { background: '#fff', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 4px 6px rgba(0,0,0,0.08)' };
-  const titleLink = { color: '#2E8B57', fontSize: '1.25rem', fontWeight: 'bold', textDecoration: 'none' };
-  const meta = { color: '#666', fontSize: '0.9rem', marginTop: '0.3rem' };
-  const itemActions = { display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' };
-  const filterPill = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    background: '#e5f4eb',
-    color: '#2E8B57',
-    padding: '0.25rem 0.6rem',
-    borderRadius: '9999px',
-    fontSize: '0.9rem',
+  const header = { textAlign: 'center', marginBottom: '1.5rem' };
+  const title = { fontSize: '2.2rem', color: '#2E8B57', margin: 0 };
+  const subtitle = { color: '#666', marginTop: '0.5rem' };
+  const actions = { display: 'flex', justifyContent: 'center', gap: '0.75rem', margin: '1rem 0 2rem', flexWrap: 'wrap' };
+  const btn = { background: '#2E8B57', color: '#fff', border: 'none', padding: '0.7rem 1.2rem', borderRadius: 8, fontWeight: 700, cursor: 'pointer' };
+
+  const grid = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+    gap: '1.25rem',
+  };
+
+  const card = {
+    background: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+    border: '1px solid #e9ecef',
+    boxShadow: '0 6px 18px rgba(0,0,0,0.07)',
+    display: 'flex',
+    flexDirection: 'column',
+  };
+
+  const linkReset = { textDecoration: 'none', color: 'inherit' };
+
+  const mediaWrap = {
+    width: '100%',
+    aspectRatio: '4 / 3',
+    background: 'linear-gradient(180deg, #f8f9fa, #e9ecef)',
+    position: 'relative',
+    overflow: 'hidden',
+    display: 'block',
+  };
+
+  const mediaImg = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block',
+  };
+
+  const placeholder = {
+    position: 'absolute',
+    inset: 0,
+    display: 'grid',
+    placeItems: 'center',
+    color: '#adb5bd',
+    fontSize: '2rem',
+  };
+
+  const content = { padding: '1rem' };
+  const titleH3 = { margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#212529' };
+  const metaRow = { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.65rem' };
+  const badge = {
+    background: '#f1f3f5',
+    border: '1px solid #e9ecef',
+    color: '#495057',
+    padding: '0.25rem 0.5rem',
+    borderRadius: 999,
+    fontSize: '0.85rem',
+    fontWeight: 600,
+  };
+
+  const footer = { padding: '0 1rem 1rem', marginTop: 'auto' };
+  const cta = {
+    display: 'inline-block',
+    textDecoration: 'none',
+    background: '#2E8B57',
+    color: '#fff',
+    padding: '0.6rem 0.9rem',
+    borderRadius: 8,
+    fontWeight: 700,
+    textAlign: 'center',
   };
 
   if (loading) {
     return (
       <div style={container}>
         <div style={{ textAlign: 'center', padding: '3rem' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⏳</div>
-          <h2>{t('recipes.loading', 'Carregando receitas...')}</h2>
+          <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>⏳</div>
+          <h3>{t('recipes.loading')}</h3>
         </div>
       </div>
     );
@@ -107,10 +118,9 @@ const Recipes = () => {
     return (
       <div style={container}>
         <div style={{ textAlign: 'center', padding: '3rem' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>❌</div>
-          <h2 style={{ color: '#dc3545', marginBottom: '0.5rem' }}>{t('recipes.errorTitle', 'Erro ao carregar')}</h2>
-          <p style={{ color: '#666', marginBottom: '1rem' }}>{err}</p>
-          <button style={btn} onClick={loadRecipes}>{t('recipes.retry', '🔄 Tentar Novamente')}</button>
+          <h2 style={{ color: '#dc3545' }}>❌ {t('recipes.errorTitle')}</h2>
+          <p style={{ color: '#666', marginBottom: '1.5rem' }}>{err}</p>
+          <button style={btn} onClick={load}>{t('recipes.retry')}</button>
         </div>
       </div>
     );
@@ -118,85 +128,68 @@ const Recipes = () => {
 
   return (
     <div style={container}>
-      <div style={header}>
-        <h1 style={h1}>🍽️ {t('nav.recipes', 'Receitas')}</h1>
-        <p style={{ color: '#666' }}>
-          {t('{{count}} receitas', { count: recipes.length, defaultValue: '{{count}} receitas' })}
+      <header style={header}>
+        <h1 style={title}>🍽️ {t('nav.recipes')}</h1>
+        <p style={subtitle}>
+          {t('recipes.count', { count: recipes.length })}
         </p>
-
-        {activeCategoryId && (
-          <div style={{ marginTop: '0.5rem' }}>
-            <span style={filterPill}>
-              {t('recipes.filteredBy', 'Filtrado por categoria')} #{activeCategoryId}
-              <button onClick={clearFilter} style={{ ...btnGray, padding: '0.25rem 0.6rem' }}>
-                {t('recipes.clear', 'Limpar')}
-              </button>
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div style={actions}>
-        <button style={btn} onClick={loadRecipes}>
-          {t('recipes.refresh', '🔄 Atualizar Lista')}
-        </button>
-
-        {user?.is_admin && (
-          <button
-            style={btnSecondary}
-            onClick={() => navigate('/recipes/new')}
-          >
-            {t('recipes.new', '➕ Nova Receita')}
-          </button>
-        )}
-      </div>
-
-      {recipes.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📄</div>
-          <h3>{t('recipes.empty', 'Nenhuma receita encontrada')}</h3>
+        <div style={actions}>
+          <button style={btn} onClick={load}>{t('recipes.refresh')}</button>
+          <Link to="/recipes/new" style={{ ...btn, textDecoration: 'none' }}>{t('recipes.new')}</Link>
         </div>
-      ) : (
-        <div style={grid}>
-          {recipes.map((r) => (
-            <div key={r.id} style={card}>
-              <Link to={`/recipes/${r.id}`} style={titleLink}>
-                {titleFor(r)}
+      </header>
+
+      <section style={grid}>
+        {recipes.map((r) => {
+          const id = r.id ?? r.recipe_id ?? r._id;
+          const to = `/recipes/${id}`;
+          const title = r.title || r.name || t('recipes.untitled');
+          const cat =
+            r.category?.name_pt ||
+            r.category?.name_en ||
+            r.category?.name_es ||
+            r.category_name ||
+            r.category ||
+            t('recipe.category');
+          const time = r.time_minutes ?? r.time ?? r.prep_time;
+          const diff = r.difficulty ?? r.level ?? 'N/A';
+          const srcRaw = r.image_url || r.image || r.imageUrl;
+          const src = cldCard(srcRaw);
+
+          return (
+            <article key={id} style={card}>
+              {/* Imagem vira link */}
+              <Link to={to} style={linkReset}>
+                <span style={mediaWrap}>
+                  {src ? (
+                    <img src={src} alt={title} style={mediaImg} loading="lazy" />
+                  ) : (
+                    <span style={placeholder}>🖼️</span>
+                  )}
+                </span>
               </Link>
 
-              <div style={meta}>
-                {r.prep_time_minutes
-                  ? `${t('recipes.prep', 'Preparo')}: ${r.prep_time_minutes} ${t('recipe.minutes', 'min')}`
-                  : t('recipe.na', 'N/A')}
-                {r.category_id ? ` • ${t('recipe.category', 'Categoria')}: #${r.category_id}` : ''}
+              <div style={content}>
+                {/* Título clicável */}
+                <h3 style={titleH3} title={title}>
+                  <Link to={to} style={linkReset}>{title}</Link>
+                </h3>
+
+                <div style={metaRow}>
+                  <span style={badge}>🏷️ {cat}</span>
+                  <span style={badge}>⏱️ {time ?? t('recipe.na')} {time ? t('recipe.minutes') : ''}</span>
+                  <span style={badge}>🧩 {t('recipe.difficulty')}: {diff || t('recipe.na')}</span>
+                </div>
               </div>
 
-              <div style={itemActions}>
-                <Link to={`/recipes/${r.id}`} style={btn}>
-                  {t('recipes.view', '👁️ Ver')}
-                </Link>
-
-                {user?.is_admin && (
-                  <>
-                    <button
-                      style={btnSecondary}
-                      onClick={() => navigate(`/recipes/${r.id}/edit`)}
-                    >
-                      {t('recipes.edit', '✏️ Editar')}
-                    </button>
-                    <button
-                      style={btnDanger}
-                      onClick={() => handleDelete(r.id)}
-                    >
-                      {t('recipes.delete', '🗑️ Excluir')}
-                    </button>
-                  </>
-                )}
+              <div style={footer}>
+                {/* CTA clicável */}
+                <Link to={to} style={cta}>{t('recipes.view')}</Link>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            </article>
+          );
+        })}
+      </section>
     </div>
   );
 };

@@ -54,7 +54,7 @@ const Login = () => {
       <div style={card}>
 
         <h1 style={title}>{t('login.title')}</h1>
-        <p style={subtitle}>🍃 ShapeMe — React + FastAPI</p>
+        <p style={subtitle}>🍃 ShapeMe</p>
 
         {errorMsg ? <div role="alert" style={err}>❌ {errorMsg}</div> : null}
 
