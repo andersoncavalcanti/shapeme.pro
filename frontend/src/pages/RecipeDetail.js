@@ -3,6 +3,71 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 
+// --- Helpers robustos ---
+const langBase = (lng) => (lng ? String(lng).split('-')[0] : 'pt');
+
+// Pega a primeira chave existente/definida
+const getStr = (obj, keys) => {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
+  }
+  return '';
+};
+
+// Transforma URLs Cloudinary mesmo sem apiService auxiliar
+function transformCloudinary(url, opts = {}) {
+  try {
+    if (!url || typeof url !== 'string') return url;
+    const isCld = url.includes('res.cloudinary.com') && url.includes('/upload/');
+    if (!isCld) return url;
+    const i = url.indexOf('/upload/');
+    if (i === -1) return url;
+
+    const {
+      f = 'auto',
+      q = 'auto',
+      dpr = 'auto',
+      c = 'fill',
+      g = 'auto',
+      w = 1200,
+      h = 800,
+      ar = '3:2',
+    } = opts;
+
+    const parts = [
+      `f_${f}`, `q_${q}`, `dpr_${dpr}`, `c_${c}`, `g_${g}`,
+      w && `w_${w}`, h && `h_${h}`, ar && `ar_${ar}`
+    ].filter(Boolean);
+
+    return `${url.slice(0, i + 8)}${parts.join(',')}/${url.slice(i + 8)}`;
+  } catch {
+    return url;
+  }
+}
+const cldHero = (u) => transformCloudinary(u, { w: 1200, h: 800, ar: '3:2', c: 'fill', g: 'auto' });
+
+// Converte string/array/JSON em array de itens
+function toArrayRobust(v) {
+  if (!v) return [];
+  if (Array.isArray(v)) return v.map((x) => (typeof x === 'string' ? x : (x?.text || x?.name || JSON.stringify(x))));
+  if (typeof v === 'string') {
+    const s = v.trim();
+    // tenta JSON
+    if ((s.startsWith('[') && s.endsWith(']')) || (s.startsWith('{') && s.endsWith('}'))) {
+      try {
+        const j = JSON.parse(s);
+        return toArrayRobust(j);
+      } catch { /* continua com split */ }
+    }
+    return s
+      .split(/\r?\n|;|•|^- |\u2022/gm) // quebra por linhas, “;”, bullets comuns e “- ” em início
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }
+  return [String(v)];
+}
+
 export default function RecipeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -14,12 +79,10 @@ export default function RecipeDetail() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
 
-  const langBase = (lng) => (lng ? String(lng).split('-')[0] : 'pt');
-
   // Carrega a receita
   useEffect(() => {
     let mounted = true;
-    const load = async () => {
+    (async () => {
       try {
         setLoading(true);
         setErr('');
@@ -27,16 +90,21 @@ export default function RecipeDetail() {
         if (!mounted) return;
         setRecipe(data || null);
 
-        // Hero: tenta backend de transformação; se não existir, cai na URL original
+        // Resolve hero:
         const raw = data?.image_url || data?.image || data?.imageUrl || '';
         let finalUrl = raw;
+
+        // 1) Se existir um helper no apiService, usa
         if (raw && typeof apiService.getTransformedImageUrl === 'function') {
           try {
             finalUrl = await apiService.getTransformedImageUrl(raw, 'hero'); // ex.: /api/images/url?size=hero
           } catch {
-            finalUrl = raw;
+            finalUrl = cldHero(raw); // 2) tenta Cloudinary direto
           }
+        } else {
+          finalUrl = cldHero(raw);   // 2) Cloudinary direto
         }
+
         setHeroUrl(finalUrl);
       } catch (e) {
         console.error(e);
@@ -45,13 +113,12 @@ export default function RecipeDetail() {
       } finally {
         if (mounted) setLoading(false);
       }
-    };
-    load();
+    })();
     return () => { mounted = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // Carrega categorias (opcional). Se não houver endpoint, tudo segue funcionando.
+  // Carrega categorias (opcional)
   useEffect(() => {
     (async () => {
       try {
@@ -64,19 +131,15 @@ export default function RecipeDetail() {
           if (cid != null) map[cid] = c;
         }
         setCatMap(map);
-      } catch {
-        /* silencioso */
-      }
+      } catch { /* silencioso */ }
     })();
   }, []);
 
+  // --- Resolvedores de campos com fallbacks ---
   const titleFor = (r) => {
     const lang = langBase(i18n.language);
     return (
-      r?.[`title_${lang}`] ||
-      r?.title_pt ||
-      r?.title_en ||
-      r?.title_es ||
+      getStr(r, [`title_${lang}`, 'title', 'title_pt', 'title_en', 'title_es']) ||
       t('recipes.untitled', 'Sem título')
     );
   };
@@ -85,58 +148,72 @@ export default function RecipeDetail() {
     const lang = langBase(i18n.language);
     const c = r?.category;
 
-    // 1) objeto completo na própria receita
-    if (c && typeof c === 'object') {
-      return (
-        c[`name_${lang}`] ||
-        c.name ||
-        c.name_pt ||
-        c.name_en ||
-        c.name_es ||
-        null
-      );
-    }
+    // 1) objeto completo
+    const objName = c && typeof c === 'object'
+      ? getStr(c, [`name_${lang}`, 'name', 'name_pt', 'name_en', 'name_es'])
+      : '';
+    if (objName) return objName;
 
-    // 2) campos soltos na receita
-    const inline =
-      r?.[`category_name_${lang}`] ||
-      r?.category_name ||
-      (typeof r?.category === 'string' ? r.category : null);
+    // 2) campos soltos
+    const inline = getStr(r, [`category_name_${lang}`, 'category_name']);
     if (inline) return inline;
 
     // 3) mapa global por id
     const cid = r?.category_id ?? r?.categoryId ?? c?.id ?? c?._id;
     if (cid != null && catMap[cid]) {
       const obj = catMap[cid];
-      return (
-        obj?.[`name_${lang}`] ||
-        obj?.name ||
-        obj?.name_pt ||
-        obj?.name_en ||
-        obj?.name_es ||
-        String(obj)
-      );
+      return getStr(obj, [`name_${lang}`, 'name', 'name_pt', 'name_en', 'name_es']) || String(obj);
     }
 
-    return null;
+    // 4) string literal em r.category
+    if (typeof r?.category === 'string') return r.category;
+
+    return '';
   };
 
-  const toArray = (v) => {
-    if (Array.isArray(v)) return v;
-    if (!v) return [];
-    if (typeof v === 'string') {
-      return v
-        .split(/\r?\n|;|•|- /g)
-        .map((s) => s.trim())
-        .filter(Boolean);
-    }
-    return [];
+  // campos de texto com fallbacks (pt/en/es + variações comuns)
+  const descriptionFor = (r) => {
+    const lang = langBase(i18n.language);
+    return (
+      getStr(r, [
+        `description_${lang}`, 'description', 'summary', 'details', 'content', 'text', 'body',
+        'descricao', 'descricao_pt', 'resumo'
+      ])
+    );
   };
 
-  // --- estilos simples ---
+  const ingredientsFor = (r) => {
+    const raw = r?.ingredients ?? r?.ingredientes ?? r?.items ?? r?.itens ?? r?.ingredients_list ?? r?.ingredientes_lista ?? r?.ingredients_text;
+    return toArrayRobust(raw);
+  };
+
+  const stepsFor = (r) => {
+    const raw = r?.steps ?? r?.instructions ?? r?.method ?? r?.preparation ?? r?.directions ?? r?.modo_preparo ?? r?.modo_de_preparo ?? r?.preparo ?? r?.passo_a_passo ?? r?.steps_text;
+    return toArrayRobust(raw);
+  };
+
+  // --- estilos (usando padding-top para não “estourar”) ---
   const container = { maxWidth: '1000px', margin: '0 auto', padding: '2rem 1rem' };
-  const hero = { width: '100%', aspectRatio: '3 / 2', borderRadius: 16, overflow: 'hidden', background: '#e9ecef', border: '1px solid #e9ecef' };
-  const heroImg = { width: '100%', height: '100%', objectFit: 'cover', display: 'block' };
+
+  // Wrapper 3:2 com técnica de padding (66.6667%)
+  const heroWrap = {
+    position: 'relative',
+    width: '100%',
+    paddingTop: '66.6667%', // 3:2
+    borderRadius: 16,
+    overflow: 'hidden',
+    background: '#e9ecef',
+    border: '1px solid #e9ecef',
+  };
+  const heroImg = {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block',
+  };
+
   const title = { fontSize: '2rem', margin: '1rem 0 0.25rem', color: '#212529', lineHeight: 1.2 };
   const muted = { color: '#6c757d' };
   const metaRow = { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', margin: '0.75rem 0 1rem' };
@@ -146,6 +223,7 @@ export default function RecipeDetail() {
   const backBtn = { background: '#2E8B57', color: '#fff', border: 'none', padding: '0.6rem 0.9rem', borderRadius: 8, fontWeight: 700, cursor: 'pointer' };
   const link = { color: '#2E8B57', textDecoration: 'none', fontWeight: 700 };
 
+  // --- estados ---
   if (loading) {
     return (
       <div style={container}>
@@ -172,21 +250,21 @@ export default function RecipeDetail() {
     );
   }
 
+  // --- dados resolvidos ---
   const titleText = titleFor(recipe);
-  const catName = categoryNameFor(recipe);
-  const time = recipe.prep_time_minutes ?? recipe.time_minutes ?? recipe.prep_time ?? recipe.time;
-  const diff = recipe.difficulty ?? recipe.level;
-  const desc = recipe.description || recipe.summary || '';
-
-  const ingredients = toArray(recipe.ingredients || recipe.items);
-  const steps = toArray(recipe.steps || recipe.instructions);
+  const catName   = categoryNameFor(recipe);
+  const time      = recipe.prep_time_minutes ?? recipe.time_minutes ?? recipe.prep_time ?? recipe.time;
+  const diff      = recipe.difficulty ?? recipe.level;
+  const desc      = descriptionFor(recipe);
+  const ingredients = ingredientsFor(recipe);
+  const steps       = stepsFor(recipe);
 
   return (
     <div style={container}>
 
-      {/* Imagem hero padronizada (3:2) */}
+      {/* HERO 3:2 (nunca estoura a tela) */}
       {heroUrl ? (
-        <div style={hero}>
+        <div style={heroWrap}>
           <img src={heroUrl} alt={titleText} style={heroImg} />
         </div>
       ) : null}
@@ -213,7 +291,7 @@ export default function RecipeDetail() {
           <ul style={{ margin: '0.5rem 0 0 1.25rem' }}>
             {ingredients.map((it, i) => (
               <li key={i} style={{ margin: '0.25rem 0' }}>
-                {typeof it === 'string' ? it : it?.name || JSON.stringify(it)}
+                {typeof it === 'string' ? it : (it?.name || it?.text || JSON.stringify(it))}
               </li>
             ))}
           </ul>
@@ -226,7 +304,7 @@ export default function RecipeDetail() {
           <ol style={{ margin: '0.5rem 0 0 1.25rem' }}>
             {steps.map((s, i) => (
               <li key={i} style={{ margin: '0.4rem 0', lineHeight: 1.6 }}>
-                {typeof s === 'string' ? s : s?.text || JSON.stringify(s)}
+                {typeof s === 'string' ? s : (s?.text || JSON.stringify(s))}
               </li>
             ))}
           </ol>
