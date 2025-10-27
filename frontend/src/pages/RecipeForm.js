@@ -3,6 +3,8 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 
+const MAX_MB = 10; // mesmo limite que o backend/Nginx aceitam
+
 const RecipeForm = () => {
   const { id } = useParams();
   const isEdit = Boolean(id);
@@ -16,7 +18,7 @@ const RecipeForm = () => {
     description_pt: '',
     description_en: '',
     description_es: '',
-    image_url: '',          // guarda o public_id do Cloudinary
+    image_url: '',          // armazena o public_id do Cloudinary
     difficulty: 1,
     prep_time_minutes: '',
     category_id: '',
@@ -92,12 +94,12 @@ const RecipeForm = () => {
 
     setErr('');
     try {
-      const res = await apiService.uploadImage(file);
+      const res = await apiService.uploadImage(file, { maxMB: MAX_MB });
       setForm((p) => ({ ...p, image_url: res.public_id })); // salva public_id
       setPreviewUrl(res.medium_url || res.thumbnail_url || '');
     } catch (e) {
       console.error('Upload falhou:', e);
-      setErr(t('recipe.uploadError', 'Não foi possível enviar a imagem.'));
+      setErr(e.message || t('recipe.uploadError', 'Não foi possível enviar a imagem.'));
     }
   };
 
@@ -138,6 +140,7 @@ const RecipeForm = () => {
         {isEdit ? t('recipe.editTitle', '✏️ Editar Receita') : t('recipe.createTitle', '➕ Nova Receita')}
       </h1>
 
+      {/* mensagem amigável */}
       {err && (
         <div className="mb-4 p-3 rounded bg-red-100 text-red-700 border border-red-300">
           {err}
@@ -175,7 +178,10 @@ const RecipeForm = () => {
 
         {/* Upload de imagem */}
         <div>
-          <label className="font-medium block mb-1">{t('recipe.image', 'Imagem da Receita')}</label>
+          <label className="font-medium block mb-1">
+            {t('recipe.image', 'Imagem da Receita')}
+            <span className="text-gray-500 text-sm"> — {t('recipe.maxSize', 'máx.')} {MAX_MB}MB</span>
+          </label>
           <input type="file" accept="image/*" onChange={onFileSelect} className="w-full" />
           {previewUrl && (
             <div className="mt-3">
