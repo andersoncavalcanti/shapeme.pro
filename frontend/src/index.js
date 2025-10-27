@@ -1,23 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import App from './App';
-import { AuthProvider } from './context/AuthContext';
-import 'react-quill/dist/quill.snow.css';
-
-// 🔹 CSS gerado pelo Tailwind CLI (prebuild/prestart)
-import './netflix-theme.css';
-
-// 🔹 Inicializa i18n do projeto (garante LanguageSwitcher)
+import './netflix-theme.css'; // <- O novo tema
 import './i18n';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
+// A importação do CSS do Quill deve ser feita aqui para ser global
+import 'react-quill/dist/quill.snow.css'; 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </BrowserRouter>
+    <App />
   </React.StrictMode>
 );
+
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+reportWebVitals( );
